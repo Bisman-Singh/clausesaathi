@@ -24,10 +24,10 @@ describe("POST /api/compare", () => {
             {
               index: pairs[0]?.index,
               whatChanged: "Interest drops.",
-              whoBenefits: "second_party",
+              whoBenefits: "Tenant",
               severity: "medium",
             },
-            { index: 999, whatChanged: "made up", whoBenefits: "unclear", severity: "low" },
+            { index: 999, whatChanged: "made up", whoBenefits: "neither", severity: "low" },
           ],
         },
       }),
@@ -48,7 +48,7 @@ describe("POST /api/compare", () => {
       {
         index: pairs[0]?.index,
         whatChanged: "Interest drops.",
-        whoBenefits: "second_party",
+        whoBenefits: "Tenant",
         severity: "medium",
       },
     ]);

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { diffDocuments, diffWords, similarity, summarizeChanges } from "@/lib/compare/diff";
+import {
+  diffDocuments,
+  titleKey,
+  diffWords,
+  similarity,
+  summarizeChanges,
+} from "@/lib/compare/diff";
 import { segmentDocument } from "@/lib/document/segment";
 
 describe("similarity", () => {
@@ -92,6 +98,28 @@ describe("diffDocuments", () => {
     );
     const kinds = diffDocuments(one, two).map((c) => c.kind);
     expect(kinds).toEqual(["unchanged", "added"]);
+  });
+
+  it("treats a rewrite under the same title as a change, not a removal plus an addition", () => {
+    const old = segmentDocument(
+      "6. Maintenance\nThe Tenant bears all repairs, including structural repairs, at their own cost.\n\n8. Disputes\nAny dispute goes to arbitration by a sole arbitrator appointed by the Landlord.",
+    );
+    const fresh = segmentDocument(
+      "5. Maintenance\nThe Landlord bears structural repairs. The Tenant bears minor repairs up to Rs. 2,000.\n\n7. Disputes\nAny dispute shall be referred to the courts at Bengaluru.\n\nNo heading here at all.",
+    );
+    const changes = diffDocuments(old, fresh);
+    expect(changes.map((c) => c.kind)).toEqual(["modified", "modified", "added"]);
+    expect(changes[0]?.before?.heading).toBe("6. Maintenance");
+    expect(changes[1]?.before?.heading).toBe("8. Disputes");
+  });
+
+  it("strips numbering from titles and ignores empty headings", () => {
+    expect(titleKey("6. Maintenance")).toBe("maintenance");
+    expect(titleKey("Clause 12.1: Notice period")).toBe("notice period");
+    expect(titleKey("MAINTENANCE")).toBe("maintenance");
+    expect(titleKey(null)).toBeNull();
+    expect(titleKey("3. ")).toBeNull();
+    expect(titleKey("   ")).toBeNull();
   });
 
   it("handles empty documents", () => {

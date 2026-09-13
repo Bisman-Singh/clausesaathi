@@ -27,6 +27,9 @@ export interface ClauseChange {
 
 /** Below this the clauses are treated as different clauses, not an edit. */
 export const MATCH_THRESHOLD = 0.45;
+/** Leading numbering in a heading, so "6. Maintenance" and "5. Maintenance" share a title. */
+const HEADING_NUMBER =
+  /^(?:(?:clause|section|article|para(?:graph)?|part|schedule)\s+)?(?:\d+(?:\.\d+)*|[ivxlc]+|[a-z]|\([a-z0-9]+\))[.):]?\s+/i;
 /** At or above this a pair is considered unchanged. */
 const UNCHANGED_THRESHOLD = 0.999;
 /** Longer clauses skip the quadratic word diff and keep only the similarity. */
@@ -129,12 +132,25 @@ interface Match {
   score: number;
 }
 
+/** The heading without its numbering, lower-cased; null when there is no heading. */
+export function titleKey(heading: string | null): string | null {
+  const title = heading?.replace(HEADING_NUMBER, "").trim().toLowerCase() ?? "";
+  return title.length > 0 ? title : null;
+}
+
+/** A rewritten clause under the same title is still the same clause. */
+function isCandidate(clauseA: Clause, clauseB: Clause, score: number): boolean {
+  if (score >= MATCH_THRESHOLD) return true;
+  const title = titleKey(clauseA.heading);
+  return title !== null && title === titleKey(clauseB.heading);
+}
+
 function bestMatches(before: Clause[], after: Clause[]): Match[] {
   const candidates: Match[] = [];
   before.forEach((clauseA, beforeIndex) => {
     after.forEach((clauseB, afterIndex) => {
       const score = similarity(clauseA.text, clauseB.text);
-      if (score >= MATCH_THRESHOLD) candidates.push({ beforeIndex, afterIndex, score });
+      if (isCandidate(clauseA, clauseB, score)) candidates.push({ beforeIndex, afterIndex, score });
     });
   });
   candidates.sort((x, y) => y.score - x.score);

@@ -10,10 +10,14 @@ import { AI_MAX_OUTPUT_TOKENS, type Locale } from "@/lib/constants";
  * modified. The model never decides what changed, only what the change means.
  */
 
+/** Longest party name the view will show; anything longer is a sentence, not a name. */
+const MAX_PARTY_CHARS = 40;
+
 export const changeExplanationSchema = z.object({
   index: z.number().int().min(0),
   whatChanged: z.string().min(1),
-  whoBenefits: z.enum(["first_party", "second_party", "both", "unclear"]),
+  /** The role the change favours, as the document names it: "Tenant", "both", "neither". */
+  whoBenefits: z.string().min(1).max(MAX_PARTY_CHARS),
   severity: z.enum(["low", "medium", "high"]),
 });
 export type ChangeExplanation = z.infer<typeof changeExplanationSchema>;
@@ -27,7 +31,7 @@ export function explainSystemPrompt(locale: Locale): string {
     "You explain differences between two versions of a legal document to a reader with no legal training.",
     `Write in ${LANGUAGE[locale]}, two or three short sentences per change, no jargon.`,
     "Each change is given as an index with the earlier and later text. For each index return what changed in practical terms, who the change favours, and how serious it is for the party it disadvantages.",
-    "first_party is the party that drafted or sends the document (landlord, employer, company). second_party is the other side (tenant, employee, customer).",
+    "whoBenefits is the role of the party the change favours, in one or two words exactly as the document names that party (for example Tenant, Landlord, Employee, Employer, Customer, Company), or the word for both or neither in the same language.",
     "Only use the indexes given. Never invent a change.",
   ].join("\n");
 }

@@ -20,11 +20,11 @@ branches, functions and lines, and CI fails below that. No file is excluded.
 | Document segmentation | headings, titles, numbered single lines, clause limit, empty input, model rendering                                                              |
 | PDF extraction        | real PDFs generated in-test (multi-page, oversized, too many pages, no text, not a PDF)                                                          |
 | IndiaCode client      | request shape, caching, schema tolerance, HTTP errors, section parsing, ref parsing                                                              |
-| Jurisdiction          | state detection in act titles, own-state preference, central fallback                                                                            |
+| Jurisdiction          | state and regional detection in act titles, own-state preference, central fallback, never another state's law                                    |
 | AI layer              | model chain, fallback order, timeouts, error aggregation, provider construction                                                                  |
 | Analysis              | wire-to-strict conversion, bounds, deadline shapes, citation dropping, statute attachment, full pipeline through the AI SDK's mock model         |
 | Deadlines             | UTC date arithmetic, anchor mapping, resolution, ordering                                                                                        |
-| Compare               | similarity, word diff, alignment by content, one-to-one matching, long-clause fallback                                                           |
+| Compare               | similarity, word diff, alignment by content or shared title, one-to-one matching, long-clause fallback                                           |
 | HTTP guards           | origin checks, size caps, JSON validation, error serialisation, rate limiting                                                                    |
 | API routes            | text and multipart analysis, PDF error codes, validation, cross-site refusal, AI outage, compare, streaming ask with tool execution              |
 | Components            | every component and page, with axe on the form, results, diff, chrome and content pages; keyboard interaction through Testing Library user-event |

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale, useT } from "@/components/locale-provider";
+import { useT } from "@/components/locale-provider";
 import type { ClauseChange, ClauseChangeKind, DiffSegment } from "@/lib/compare/diff";
 import type { ChangeExplanation } from "@/lib/compare/explain";
 import type { TranslationKey } from "@/lib/i18n";
@@ -19,11 +19,16 @@ const KIND_STYLE: Record<ClauseChangeKind, string> = {
   removed: "bg-danger-bg text-danger-text",
 };
 
-const WHO_LABEL: Record<ChangeExplanation["whoBenefits"], { en: string; hi: string }> = {
-  first_party: { en: "the drafting party", hi: "दस्तावेज़ बनाने वाला पक्ष" },
-  second_party: { en: "the other party", hi: "दूसरा पक्ष" },
-  both: { en: "both parties", hi: "दोनों पक्ष" },
-  unclear: { en: "unclear", hi: "स्पष्ट नहीं" },
+const SEVERITY_KEY: Record<ChangeExplanation["severity"], TranslationKey> = {
+  low: "severityLow",
+  medium: "severityMedium",
+  high: "severityHigh",
+};
+
+const SEVERITY_STYLE: Record<ChangeExplanation["severity"], string> = {
+  low: "bg-surface text-muted",
+  medium: "bg-warn-bg text-warn-text",
+  high: "bg-danger-bg text-danger-text",
 };
 
 export interface DiffViewProps {
@@ -109,14 +114,19 @@ function Segment({ segment }: { segment: DiffSegment }) {
 
 function Explanation({ item }: { item: ChangeExplanation | undefined }) {
   const t = useT();
-  const { locale } = useLocale();
   if (!item) return null;
   return (
     <dl className="mt-2 text-sm">
       <dt className="inline font-medium">{t("compareWhatChanged")}: </dt>
       <dd className="inline">{item.whatChanged} </dd>
       <dt className="inline font-medium">{t("compareWhoBenefits")}: </dt>
-      <dd className="inline">{WHO_LABEL[item.whoBenefits][locale]}</dd>
+      <dd className="inline">{item.whoBenefits} </dd>
+      <dt className="inline font-medium">{t("compareSeverity")}: </dt>
+      <dd className="inline">
+        <span className={`rounded px-2 py-0.5 ${SEVERITY_STYLE[item.severity]}`}>
+          {t(SEVERITY_KEY[item.severity])}
+        </span>
+      </dd>
     </dl>
   );
 }

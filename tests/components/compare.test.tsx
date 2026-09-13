@@ -27,7 +27,7 @@ describe("DiffView", () => {
           {
             index: modifiedIndex,
             whatChanged: "Interest drops.",
-            whoBenefits: "second_party",
+            whoBenefits: "Lessee",
             severity: "low",
           },
         ]}
@@ -38,7 +38,8 @@ describe("DiffView", () => {
     expect(container.querySelector("ins")).toHaveTextContent("+");
     expect(container.querySelector("del")).toHaveTextContent("-");
     expect(screen.getByText("Interest drops.")).toBeInTheDocument();
-    expect(screen.getByText("the other party")).toBeInTheDocument();
+    expect(screen.getByText("Lessee")).toBeInTheDocument();
+    expect(screen.getByText("Low")).toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
   });
 
