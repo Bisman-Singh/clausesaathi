@@ -18,7 +18,7 @@ export function Button({ variant = "primary", className = "", ...props }: Button
   return (
     <button
       {...props}
-      className={`inline-flex min-h-11 items-center justify-center rounded-lg px-5 py-2 font-medium transition-colors ${STYLES[variant]} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center rounded-lg px-5 py-2 font-medium transition-[transform,background-color,border-color,opacity] active:scale-[0.97] disabled:active:scale-100 ${STYLES[variant]} ${className}`}
     />
   );
 }

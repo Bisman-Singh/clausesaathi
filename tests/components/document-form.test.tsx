@@ -58,6 +58,16 @@ describe("DocumentForm", () => {
       stateBasis: "user",
     });
     expect(screen.getByRole("group", { name: "Or try a sample" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rent agreement" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByText(/\/ 60,000 characters/)).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("Document text"), "!");
+    expect(screen.getByRole("button", { name: "Rent agreement" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
   });
 
   it("accepts a PDF without text and rejects an oversized one", async () => {

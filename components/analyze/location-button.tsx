@@ -58,7 +58,7 @@ export function LocationButton({ onLocate }: LocationButtonProps) {
         type="button"
         onClick={locate}
         disabled={status === "locating"}
-        className="inline-flex min-h-11 items-center gap-2 self-start rounded-full border border-line bg-surface px-4 text-sm font-medium hover:border-accent hover:bg-accent-soft disabled:opacity-60"
+        className="inline-flex min-h-11 items-center gap-2 self-start rounded-full border border-line bg-surface px-4 text-sm font-medium transition-[transform,background-color,border-color] hover:border-accent hover:bg-accent-soft active:scale-[0.97] disabled:opacity-60"
       >
         <span aria-hidden="true">◎</span>
         {t("locationButton")}

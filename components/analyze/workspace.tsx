@@ -81,8 +81,10 @@ export function AnalyzeWorkspace() {
 
   return (
     <div className="flex flex-col gap-10">
-      <Hero />
-      <section aria-labelledby="form-heading" className="flex flex-col gap-4">
+      <div className="print:hidden">
+        <Hero />
+      </div>
+      <section aria-labelledby="form-heading" className="flex flex-col gap-4 print:hidden">
         <h2 id="form-heading" className="text-2xl font-bold">
           {t("formHeading")}
         </h2>
@@ -103,7 +105,7 @@ export function AnalyzeWorkspace() {
       </section>
 
       {analysis ? (
-        <div ref={resultRef} className="flex flex-col gap-6">
+        <div ref={resultRef} className="result-enter flex flex-col gap-6">
           {analysis.response.source === "transcription" ? (
             <Alert tone="warn">{t("noticeTranscribed")}</Alert>
           ) : null}

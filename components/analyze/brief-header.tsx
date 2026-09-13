@@ -2,6 +2,7 @@
 
 import { AtAGlance } from "@/components/analyze/at-a-glance";
 import { useT } from "@/components/locale-provider";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { Jurisdiction } from "@/app/api/analyze/route";
 import type { AnalysisResult } from "@/lib/analysis/schemas";
@@ -29,13 +30,23 @@ export function BriefHeader({ result, jurisdiction }: BriefHeaderProps) {
 
   return (
     <Card className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        <p className="text-sm font-medium uppercase tracking-wide text-accent">
-          {brief.documentType}
-        </p>
-        <h2 id="result-heading" tabIndex={-1} className="text-2xl font-bold sm:text-3xl">
-          {t("resultHeading")}
-        </h2>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium uppercase tracking-wide text-accent">
+            {brief.documentType}
+          </p>
+          <h2 id="result-heading" tabIndex={-1} className="text-2xl font-bold sm:text-3xl">
+            {t("resultHeading")}
+          </h2>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => window.print()}
+          className="print:hidden"
+        >
+          {t("printBrief")}
+        </Button>
       </header>
       <AtAGlance result={result} />
       <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">

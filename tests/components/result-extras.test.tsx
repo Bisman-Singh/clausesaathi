@@ -2,7 +2,7 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AtAGlance } from "@/components/analyze/at-a-glance";
 import { BriefHeader } from "@/components/analyze/brief-header";
 import { Checklist } from "@/components/analyze/checklist";
@@ -70,6 +70,15 @@ describe("AtAGlance and presentSections", () => {
 });
 
 describe("BriefHeader", () => {
+  it("prints the brief on request", async () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
+    renderWithLocale(
+      <BriefHeader result={FIXTURE_RESULT} jurisdiction={{ state: null, basis: "none" }} />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Save as PDF" }));
+    expect(print).toHaveBeenCalled();
+  });
+
   it("says when the state came from the user's location", () => {
     renderWithLocale(
       <BriefHeader result={FIXTURE_RESULT} jurisdiction={{ state: "Goa", basis: "location" }} />,
