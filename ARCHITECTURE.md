@@ -60,8 +60,10 @@ text and link are the API's.
 
 **A fallback chain instead of one model.** Each Gemini model has its own
 free-tier quota pool, so a 429 on one is not an outage. Every attempt has its
-own timeout. Streaming Q&A uses the first model only, since a stream cannot
-switch models midway; the failure surfaces as an error part the UI translates.
+own timeout. Streaming Q&A tries the same chain: each model's stream is read until it
+produces content or fails, a failure before any content moves to the next
+model, and the client sees one answer from its first chunk
+(`lib/qa/stream.ts`).
 
 **No database, no accounts.** A document is processed in memory for one request.
 The browser keeps the last result in session storage through a small external

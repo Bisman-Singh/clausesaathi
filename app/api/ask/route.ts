@@ -1,4 +1,4 @@
-import { stepCountIs, streamText, type ModelMessage } from "ai";
+import { createUIMessageStreamResponse, stepCountIs, streamText, type ModelMessage } from "ai";
 import { z } from "zod";
 import { modelChain } from "@/lib/ai/models";
 import { AI_TIMEOUT_MS, LIMITS } from "@/lib/constants";
@@ -7,6 +7,7 @@ import { guardAiRequest, toHttpError } from "@/lib/http/ai-request";
 import { HttpError, jsonError, readJson } from "@/lib/http/guard";
 import { toLocale } from "@/lib/i18n";
 import { qaSystemPrompt } from "@/lib/qa/prompt";
+import { streamWithFallback } from "@/lib/qa/stream";
 import { statuteTools } from "@/lib/qa/tools";
 import { aiRateLimiter, serverDeps } from "@/lib/server/deps";
 import { isIndianState } from "@/lib/statute/jurisdiction";
@@ -38,33 +39,45 @@ export function toModelMessages(messages: z.infer<typeof bodySchema>["messages"]
   }));
 }
 
+/** What the client sees in an error chunk; provider messages never leave the server. */
+export function hideModelError(): string {
+  return "model_failed";
+}
+
 /**
  * POST /api/ask
  *
  * Streams an answer grounded in the supplied document, with one read-only
- * statute lookup tool. The first model in the chain is used; streaming cannot
- * switch models mid-response, so failures surface as an error part.
+ * statute lookup tool. Models are tried in chain order; one that fails before
+ * producing anything is skipped, and the client only ever sees one answer.
  */
 export async function POST(request: Request): Promise<Response> {
   try {
     guardAiRequest(request, aiRateLimiter);
     const body = await readJson(request, bodySchema, MAX_BODY_BYTES);
     const deps = serverDeps();
-    const [spec] = modelChain(deps.env);
-    if (!spec) throw new HttpError(503, "ai_unavailable");
+    const chain = modelChain(deps.env);
+    if (chain.length === 0) throw new HttpError(503, "ai_unavailable");
     const state = body.state && isIndianState(body.state) ? body.state : null;
+    const system = qaSystemPrompt(segmentDocument(body.document), toLocale(body.locale));
+    const messages = toModelMessages(body.messages);
 
-    const result = streamText({
-      model: deps.factory(spec),
-      system: qaSystemPrompt(segmentDocument(body.document), toLocale(body.locale)),
-      messages: toModelMessages(body.messages),
-      tools: statuteTools(deps.statutes, state),
-      stopWhen: stepCountIs(3),
-      maxOutputTokens: 1200,
-      temperature: 0.2,
-      abortSignal: AbortSignal.timeout(AI_TIMEOUT_MS),
-    });
-    return result.toUIMessageStreamResponse();
+    const stream = streamWithFallback(
+      chain,
+      (spec) =>
+        streamText({
+          model: deps.factory(spec),
+          system,
+          messages,
+          tools: statuteTools(deps.statutes, state),
+          stopWhen: stepCountIs(3),
+          maxOutputTokens: 1200,
+          temperature: 0.2,
+          abortSignal: AbortSignal.timeout(AI_TIMEOUT_MS),
+        }).toUIMessageStream({ onError: hideModelError }),
+      { onError: (spec) => console.warn("ask: model failed before answering", spec.id) },
+    );
+    return createUIMessageStreamResponse({ stream });
   } catch (error) {
     return jsonError(toHttpError(error));
   }
