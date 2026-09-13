@@ -17,7 +17,8 @@ quota, and the usual web application classes (XSS, clickjacking, CSRF).
   (`proxy.ts`). Development adds `unsafe-eval` for React's debugging only.
 - `Strict-Transport-Security` with preload, `X-Content-Type-Options: nosniff`,
   `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`,
-  restrictive `Permissions-Policy`, `Cross-Origin-Opener-Policy` and
+  restrictive `Permissions-Policy` (camera, microphone and payment off;
+  geolocation allowed for this origin only, and only used after the user presses the location button), `Cross-Origin-Opener-Policy` and
   `Cross-Origin-Resource-Policy: same-origin`, no `X-Powered-By`
   (`next.config.ts`).
 
