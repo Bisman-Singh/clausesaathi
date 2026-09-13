@@ -3,6 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useId, useMemo, useState, type FormEvent } from "react";
+import { z } from "zod";
 import { useLocale, useT } from "@/components/locale-provider";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,10 @@ export interface AskPanelProps {
   document: ParsedDocument;
   state: string;
 }
+
+// zod probes `Function("")` to decide whether it may compile fast paths; under the
+// strict CSP that probe is a reported violation, so it is switched off here.
+z.config({ jitless: true });
 
 function isTextPart(part: { type: string }): part is { type: "text"; text: string } {
   return part.type === "text";

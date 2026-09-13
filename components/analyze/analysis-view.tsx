@@ -1,6 +1,6 @@
 "use client";
 
-import { AskPanel } from "@/components/analyze/ask-panel";
+import dynamic from "next/dynamic";
 import { BriefHeader } from "@/components/analyze/brief-header";
 import { Checklist } from "@/components/analyze/checklist";
 import { ClauseList } from "@/components/analyze/clause-list";
@@ -16,6 +16,15 @@ import type { Jurisdiction } from "@/app/api/analyze/route";
 import type { AnalysisResult } from "@/lib/analysis/schemas";
 import type { ParsedDocument } from "@/lib/document/types";
 import type { TranslationKey } from "@/lib/i18n";
+
+/**
+ * The Q&A panel brings the chat transport and its schema library with it,
+ * so it is fetched only once there is a result to ask about.
+ */
+const AskPanel = dynamic(
+  () => import("@/components/analyze/ask-panel").then((module) => module.AskPanel),
+  { ssr: false, loading: () => <div aria-hidden="true" className="skeleton h-11 w-full" /> },
+);
 
 export interface AnalysisViewProps {
   document: ParsedDocument;
