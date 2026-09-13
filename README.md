@@ -141,7 +141,9 @@ See `ARCHITECTURE.md` for the request flow and the reasoning behind the design.
 Documents are processed in memory for one request and never written to disk or
 a database. The last result stays in the browser's session storage until the
 tab closes. The only third parties that see document text are the model
-provider and, for short search phrases only, IndiaCode. Location is read only
+provider and, for short search phrases only, IndiaCode. The Gemini key runs
+on Google's paid tier, under whose terms prompts and responses are not used to
+improve Google's products and are logged only briefly for abuse detection. Location is read only
 when the user presses the button and accepts the browser prompt, and the
 coordinates are turned into a state inside the browser; the server sees the
 state name at most, never a position.

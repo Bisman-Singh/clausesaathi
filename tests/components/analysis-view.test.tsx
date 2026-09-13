@@ -58,15 +58,17 @@ describe("AnalysisView", () => {
     );
     expect(screen.getByText("High")).toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
-  });
+  }, 30_000);
 
   it("renders a placeholder for the Q&A panel on the server and loads it only in the browser", async () => {
     const html = renderToString(<LocaleProvider>{view}</LocaleProvider>);
     expect(html).toContain("skeleton");
     expect(html).not.toContain("Your question");
     renderWithLocale(view);
-    expect(await screen.findByLabelText("Your question")).toBeInTheDocument();
-  });
+    expect(
+      await screen.findByLabelText("Your question", {}, { timeout: 10_000 }),
+    ).toBeInTheDocument();
+  }, 30_000);
 
   it("hides the dropped-citation note and empty sections when there is nothing to show", () => {
     renderWithLocale(

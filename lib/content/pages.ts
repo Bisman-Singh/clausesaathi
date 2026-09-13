@@ -38,6 +38,7 @@ export const ABOUT_CONTENT: Record<Locale, ContentSection[]> = {
       heading: "Privacy",
       paragraphs: [
         "Documents are processed in memory for one request and are not stored on the server. The result stays in your browser tab only until you close it.",
+        "The model provider sees the document for that one request. The Gemini key runs on Google's paid tier, whose terms say prompts and responses are not used to improve Google's products and are logged only briefly for abuse detection.",
       ],
     },
   ],
@@ -67,6 +68,7 @@ export const ABOUT_CONTENT: Record<Locale, ContentSection[]> = {
       heading: "गोपनीयता",
       paragraphs: [
         "दस्तावेज़ एक अनुरोध के लिए मेमोरी में संसाधित होते हैं और सर्वर पर संग्रहीत नहीं होते। परिणाम केवल आपके ब्राउज़र टैब में तब तक रहता है जब तक आप उसे बंद नहीं करते।",
+        "मॉडल प्रदाता उस एक अनुरोध के लिए दस्तावेज़ देखता है। Gemini कुंजी Google के सशुल्क स्तर पर चलती है, जिसकी शर्तों के अनुसार प्रॉम्प्ट और उत्तर Google के उत्पाद सुधारने में इस्तेमाल नहीं होते और दुरुपयोग रोकने के लिए केवल थोड़े समय तक लॉग रहते हैं।",
       ],
     },
   ],
