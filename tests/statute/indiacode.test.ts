@@ -1,9 +1,10 @@
-import { isIndiaCodeUrl, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   INDIACODE_BASE_URL,
   createIndiaCodeClient,
   parseStatuteRef,
   type FetchLike,
+  isIndiaCodeUrl,
 } from "@/lib/statute/indiacode";
 
 function jsonResponse(body: unknown, status = 200): Response {
