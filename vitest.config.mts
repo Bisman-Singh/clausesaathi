@@ -18,6 +18,8 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
+    // axe over a full result page can take a few seconds on a loaded machine.
+    testTimeout: 15_000,
     setupFiles: ["./vitest.setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}"],
     coverage: {
