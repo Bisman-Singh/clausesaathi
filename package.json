@@ -1,0 +1,69 @@
+{
+  "name": "clausesaathi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plain-language legal document companion for India. Reads a contract, notice or policy, explains it clause by clause with citations, computes obligations and deadlines, flags risks against the governing statute, and prepares the user for a lawyer.",
+  "license": "MIT",
+  "homepage": "https://clausesaathi.bisman.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bisman-Singh/clausesaathi.git"
+  },
+  "keywords": [
+    "legal-tech",
+    "generative-ai",
+    "gemini",
+    "nextjs",
+    "accessibility",
+    "india",
+    "indiacode"
+  ],
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test:coverage && npm run build"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "4.0.69",
+    "@ai-sdk/openai": "4.0.66",
+    "@ai-sdk/react": "4.0.102",
+    "ai": "7.0.99",
+    "next": "16.3.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "unpdf": "1.8.1",
+    "zod": "4.6.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "24.10.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "6.0.3",
+    "@vitest/coverage-v8": "5.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.5",
+    "jsdom": "30.0.1",
+    "prettier": "3.9.6",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "5.0.0",
+    "vitest-axe": "0.1.0"
+  }
+}
