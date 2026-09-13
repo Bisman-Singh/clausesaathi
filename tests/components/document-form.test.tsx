@@ -10,12 +10,20 @@ import { renderWithLocale } from "@/tests/components/helpers";
 
 describe("validateInput", () => {
   it("returns the right error key for each failure and null when usable", () => {
-    const bigFile = { size: LIMITS.MAX_PDF_BYTES + 1 } as File;
-    const smallFile = { size: 10 } as File;
+    const bigFile = {
+      size: LIMITS.MAX_UPLOAD_BYTES + 1,
+      type: "application/pdf",
+      name: "big.pdf",
+    } as File;
+    const smallFile = { size: 10, type: "application/pdf", name: "a.pdf" } as File;
     expect(validateInput("", null)).toBe("errorEmpty");
     expect(validateInput("short", null)).toBe("errorTooShort");
     expect(validateInput("x".repeat(LIMITS.MAX_DOCUMENT_CHARS + 1), null)).toBe("errorTooLong");
-    expect(validateInput("", bigFile)).toBe("errorPdfTooLarge");
+    expect(validateInput("", bigFile)).toBe("errorFileTooLarge");
+    expect(validateInput("", { size: 10, type: "", name: "notes.docx" } as File)).toBe(
+      "errorUnsupportedFile",
+    );
+    expect(validateInput("", { size: 10, type: "", name: "scan.JPG" } as File)).toBeNull();
     expect(validateInput("", smallFile)).toBeNull();
     expect(validateInput("x".repeat(LIMITS.MIN_DOCUMENT_CHARS), null)).toBeNull();
   });
@@ -55,18 +63,18 @@ describe("DocumentForm", () => {
   it("accepts a PDF without text and rejects an oversized one", async () => {
     const onSubmit = vi.fn();
     renderWithLocale(<DocumentForm busy={false} onSubmit={onSubmit} />);
-    const input = screen.getByLabelText("Or upload a PDF") as HTMLInputElement;
+    const input = screen.getByLabelText("Or upload a PDF or a photo") as HTMLInputElement;
     const file = new File(["%PDF-1.4"], "a.pdf", { type: "application/pdf" });
     await userEvent.upload(input, file);
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ file, text: "" }));
 
-    const big = new File([new Uint8Array(LIMITS.MAX_PDF_BYTES + 1)], "big.pdf", {
+    const big = new File([new Uint8Array(LIMITS.MAX_UPLOAD_BYTES + 1)], "big.pdf", {
       type: "application/pdf",
     });
     await userEvent.upload(input, big);
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("larger than 5 MB");
+    expect(screen.getByRole("alert")).toHaveTextContent("larger than 8 MB");
 
     fireEvent.change(input, { target: { files: [] } });
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));

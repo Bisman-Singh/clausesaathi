@@ -9,7 +9,7 @@
    │
    ▼
  POST /api/analyze ──────────▶ guard: same-origin, rate limit, size caps
-                               parse: JSON text or multipart PDF (unpdf)
+                               parse: JSON text, multipart PDF (unpdf) or scan/photo (model transcription)
                                segment: deterministic clauses c1..cN
                                generateText + Output.object (wire schema) ──▶ Gemini
                                toBrief: strict validation, bounds, deadline shape
@@ -68,14 +68,16 @@ cost this app can afford; API routes are excluded from the proxy.
 
 ## Limits
 
-Every input is bounded (`lib/constants.ts`): document length, PDF size and page
+Every input is bounded (`lib/constants.ts`): document length, upload size and PDF page
 count, situation and question length, chat history, clause count and statute
 lookups per analysis. The limits keep free-tier usage predictable and abuse
 cheap to reject before a model is called.
 
 ## Known limitations
 
-- Scanned PDFs have no text layer; the app says so rather than attempting OCR.
+- Scans and photos are transcribed by the model, not by a dedicated OCR engine.
+  The result is labelled as a transcription and the user is told to check
+  names, amounts and dates against the original.
 - The rate limiter is per serverless instance. See `SECURITY.md`.
 - IndiaCode covers legislation, not case law. The app never claims otherwise.
 - Hindi output quality depends on the model; the interface strings are reviewed.

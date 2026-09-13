@@ -7,6 +7,7 @@ import { useT } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import { CONTROL_CLASS, Field } from "@/components/ui/field";
 import { LIMITS } from "@/lib/constants";
+import { UPLOAD_ACCEPT, uploadMediaType } from "@/lib/document/upload";
 import type { TranslationKey } from "@/lib/i18n";
 import { findSample } from "@/lib/samples";
 
@@ -27,13 +28,14 @@ export function validateInput(text: string, file: File | null): TranslationKey |
   if (!file && text.length === 0) return "errorEmpty";
   if (!file && text.length < LIMITS.MIN_DOCUMENT_CHARS) return "errorTooShort";
   if (text.length > LIMITS.MAX_DOCUMENT_CHARS) return "errorTooLong";
-  if (file && file.size > LIMITS.MAX_PDF_BYTES) return "errorPdfTooLarge";
+  if (file && uploadMediaType(file) === null) return "errorUnsupportedFile";
+  if (file && file.size > LIMITS.MAX_UPLOAD_BYTES) return "errorFileTooLarge";
   return null;
 }
 
 /**
- * The single entry point: paste text, upload a PDF or pick a sample, say a
- * line about your situation, optionally choose your state.
+ * The single entry point: paste text, upload a PDF or a photo, or pick a
+ * sample; say a line about your situation; optionally choose your state.
  */
 export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
   const t = useT();
@@ -86,7 +88,7 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
           <input
             id={`${id}-file`}
             type="file"
-            accept="application/pdf,.pdf"
+            accept={UPLOAD_ACCEPT}
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             aria-describedby={describedBy}
             className="min-h-11"

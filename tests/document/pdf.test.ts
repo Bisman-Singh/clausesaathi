@@ -16,7 +16,7 @@ describe("extractPdfText", () => {
   });
 
   it("rejects files above the size limit before parsing", async () => {
-    const huge = new Uint8Array(LIMITS.MAX_PDF_BYTES + 1);
+    const huge = new Uint8Array(LIMITS.MAX_UPLOAD_BYTES + 1);
     await expect(extractPdfText(huge)).rejects.toMatchObject({ code: "too_large" });
   });
 
@@ -27,10 +27,11 @@ describe("extractPdfText", () => {
     });
   });
 
-  it("rejects scans and near-empty files", async () => {
-    await expect(extractPdfText(buildSimplePdf([["hi"]]))).rejects.toMatchObject({
-      code: "no_text",
-    });
+  it("rejects scans and near-empty files without consuming the caller's bytes", async () => {
+    const scan = buildSimplePdf([["hi"]]);
+    const length = scan.byteLength;
+    await expect(extractPdfText(scan)).rejects.toMatchObject({ code: "no_text" });
+    expect(scan.byteLength).toBe(length);
   });
 
   it("rejects bytes that are not a PDF", async () => {

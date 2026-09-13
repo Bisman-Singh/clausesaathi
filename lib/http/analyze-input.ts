@@ -1,20 +1,27 @@
 import { z } from "zod";
 import { LIMITS, type Locale } from "@/lib/constants";
-import { extractPdfText } from "@/lib/document/pdf";
+import { PdfError, extractPdfText } from "@/lib/document/pdf";
+import { transcribeFile, type TranscribeDeps } from "@/lib/document/transcribe";
+import { isImageUpload, uploadMediaType, type UploadMediaType } from "@/lib/document/upload";
 import { HttpError, assertContentLength, readJson } from "@/lib/http/guard";
 import { toLocale } from "@/lib/i18n";
 import { isIndianState, type IndianState } from "@/lib/statute/jurisdiction";
 
 /**
  * Reading the analyse request in either of its two shapes: JSON with pasted
- * text, or multipart with a PDF. Both end up as the same validated input.
+ * text, or multipart with a PDF or an image. Both end up as the same
+ * validated input, tagged with where the text came from.
  */
+
+/** Pasted, read from a PDF's text layer, or transcribed by the model from a scan or photo. */
+export type DocumentSource = "text" | "pdf" | "transcription";
 
 export interface AnalyzeRequest {
   text: string;
   situation: string;
   locale: Locale;
   state: IndianState | null;
+  source: DocumentSource;
 }
 
 const jsonSchema = z.object({
@@ -26,19 +33,23 @@ const jsonSchema = z.object({
 
 /** JSON bodies may carry the whole document plus a little metadata. */
 const MAX_JSON_BYTES = LIMITS.MAX_DOCUMENT_CHARS * 4 + 4096;
-/** Multipart bodies carry the PDF plus a little metadata. */
-const MAX_MULTIPART_BYTES = LIMITS.MAX_PDF_BYTES + 8192;
+/** Multipart bodies carry the file plus a little metadata. */
+const MAX_MULTIPART_BYTES = LIMITS.MAX_UPLOAD_BYTES + 8192;
 
-export async function readAnalyzeRequest(request: Request): Promise<AnalyzeRequest> {
+export async function readAnalyzeRequest(
+  request: Request,
+  deps: TranscribeDeps,
+): Promise<AnalyzeRequest> {
   const contentType = request.headers.get("content-type") ?? "";
   const raw = contentType.startsWith("multipart/form-data")
-    ? await readMultipart(request)
-    : await readJson(request, jsonSchema, MAX_JSON_BYTES);
+    ? await readMultipart(request, deps)
+    : { ...(await readJson(request, jsonSchema, MAX_JSON_BYTES)), source: "text" as const };
   return {
     text: validateText(raw.text),
     situation: raw.situation.trim().slice(0, LIMITS.MAX_SITUATION_CHARS),
     locale: toLocale(raw.locale),
     state: raw.state && isIndianState(raw.state) ? raw.state : null,
+    source: raw.source,
   };
 }
 
@@ -47,21 +58,44 @@ interface RawInput {
   situation: string;
   locale: string | undefined;
   state: string | undefined;
+  source: DocumentSource;
 }
 
-async function readMultipart(request: Request): Promise<RawInput> {
+async function readMultipart(request: Request, deps: TranscribeDeps): Promise<RawInput> {
   assertContentLength(request, MAX_MULTIPART_BYTES);
   const form = await request.formData();
   const file = form.get("file");
   if (!(file instanceof File)) throw new HttpError(400, "missing_file");
-  if (file.size > LIMITS.MAX_PDF_BYTES) throw new HttpError(400, "pdf_too_large");
-  const { text } = await extractPdfText(new Uint8Array(await file.arrayBuffer()));
+  const mediaType = uploadMediaType(file);
+  if (!mediaType) throw new HttpError(400, "unsupported_file");
+  if (file.size > LIMITS.MAX_UPLOAD_BYTES) throw new HttpError(400, "file_too_large");
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const { text, source } = await readFile(bytes, mediaType, deps);
   return {
     text,
+    source,
     situation: stringField(form, "situation"),
     locale: stringField(form, "locale"),
     state: stringField(form, "state"),
   };
+}
+
+/** Text from the file: a PDF's own text layer when it has one, else the model's transcription. */
+async function readFile(
+  bytes: Uint8Array,
+  mediaType: UploadMediaType,
+  deps: TranscribeDeps,
+): Promise<{ text: string; source: DocumentSource }> {
+  if (!isImageUpload(mediaType)) {
+    try {
+      return { text: (await extractPdfText(bytes)).text, source: "pdf" };
+    } catch (error) {
+      if (!(error instanceof PdfError) || error.code !== "no_text") throw error;
+    }
+  }
+  const transcription = await transcribeFile({ bytes, mediaType }, deps);
+  if (!transcription) throw new HttpError(400, "no_text_found");
+  return { text: transcription.text, source: "transcription" };
 }
 
 function stringField(form: FormData, name: string): string {

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/analyze/route";
 import type { DocumentBriefWire } from "@/lib/analysis/schemas";
 import { LIMITS } from "@/lib/constants";
-import { setServerDeps } from "@/lib/server/deps";
+import { aiRateLimiter, setServerDeps } from "@/lib/server/deps";
 import { buildSimplePdf } from "@/tests/fixtures/pdf";
 import { SAMPLE_TEXT, fakeDeps, jsonPost } from "@/tests/api/helpers";
 
@@ -19,7 +19,21 @@ const brief: DocumentBriefWire = {
   checklist: [],
 };
 
-afterEach(() => setServerDeps(null));
+afterEach(() => {
+  setServerDeps(null);
+  aiRateLimiter.reset();
+});
+
+/** A same-origin multipart upload of `bytes` under `name` with the given declared type. */
+function multipart(bytes: Uint8Array, name: string, type: string): Request {
+  const form = new FormData();
+  form.append("file", new File([bytes as unknown as BlobPart], name, { type }));
+  return new Request("https://app.example/api/analyze", {
+    method: "POST",
+    headers: { "sec-fetch-site": "same-origin" },
+    body: form,
+  });
+}
 
 describe("POST /api/analyze", () => {
   it("analyses pasted text and returns the document with its brief", async () => {
@@ -66,6 +80,48 @@ describe("POST /api/analyze", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.document.clauses.length).toBeGreaterThan(0);
+    expect(body.source).toBe("pdf");
+  });
+
+  it("transcribes a PDF with no text layer and says so", async () => {
+    const generate = vi.fn(async (call: { messages?: unknown }) =>
+      call.messages ? { text: SAMPLE_TEXT } : { output: brief },
+    );
+    setServerDeps(fakeDeps(generate));
+    const scan = buildSimplePdf([["hi"]]);
+    const response = await POST(multipart(scan, "scan.pdf", "application/pdf"));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.source).toBe("transcription");
+    expect(body.document.clauses).toHaveLength(2);
+    expect(generate).toHaveBeenCalledTimes(2);
+    const sent = generate.mock.calls[0]?.[0] as {
+      messages: Array<{ content: Array<{ type: string; data?: Uint8Array }> }>;
+    };
+    const filePart = sent.messages[0]?.content.find((part) => part.type === "file");
+    expect(filePart?.data?.byteLength).toBe(scan.byteLength);
+  });
+
+  it("transcribes a photo and refuses one with nothing readable", async () => {
+    const generate = vi.fn(async (call: { messages?: unknown }) =>
+      call.messages ? { text: SAMPLE_TEXT } : { output: brief },
+    );
+    setServerDeps(fakeDeps(generate));
+    const ok = await POST(multipart(new Uint8Array([0xff, 0xd8, 0xff]), "photo.jpg", ""));
+    expect(ok.status).toBe(200);
+    await expect(ok.json()).resolves.toMatchObject({ source: "transcription" });
+
+    setServerDeps(fakeDeps(vi.fn(async () => ({ text: "..." }))));
+    const blank = await POST(multipart(new Uint8Array(4), "blank.png", "image/png"));
+    expect(blank.status).toBe(400);
+    await expect(blank.json()).resolves.toMatchObject({ error: "no_text_found" });
+  });
+
+  it("rejects file types it cannot read", async () => {
+    setServerDeps(fakeDeps(vi.fn()));
+    const response = await POST(multipart(new Uint8Array(4), "notes.docx", ""));
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: "unsupported_file" });
   });
 
   it("treats a body without a content type as JSON", async () => {
@@ -113,7 +169,7 @@ describe("POST /api/analyze", () => {
   it("rejects an oversized file by declared size", async () => {
     setServerDeps(fakeDeps(vi.fn()));
     const form = new FormData();
-    form.append("file", new File([new Uint8Array(LIMITS.MAX_PDF_BYTES + 1)], "big.pdf"));
+    form.append("file", new File([new Uint8Array(LIMITS.MAX_UPLOAD_BYTES + 1)], "big.pdf"));
     const response = await POST(
       new Request("https://app.example/api/analyze", {
         method: "POST",
@@ -121,7 +177,7 @@ describe("POST /api/analyze", () => {
         body: form,
       }),
     );
-    await expect(response.json()).resolves.toMatchObject({ error: "pdf_too_large" });
+    await expect(response.json()).resolves.toMatchObject({ error: "file_too_large" });
   });
 
   it("rejects text that is too short or too long", async () => {

@@ -68,7 +68,7 @@ describe("AnalyzeWorkspace", () => {
     vi.stubGlobal("fetch", vi.fn(fetchJson(FIXTURE_RESPONSE)));
     renderWithLocale(<AnalyzeWorkspace />);
     const file = new File(["%PDF-1.4"], "a.pdf", { type: "application/pdf" });
-    await userEvent.upload(screen.getByLabelText("Or upload a PDF"), file);
+    await userEvent.upload(screen.getByLabelText("Or upload a PDF or a photo"), file);
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
     await waitFor(() =>
       expect(screen.getByText("The tenancy lasts eleven months.")).toBeInTheDocument(),
@@ -80,6 +80,17 @@ describe("AnalyzeWorkspace", () => {
     expect(call[1].body).toBeInstanceOf(FormData);
     const stored = JSON.parse(window.sessionStorage.getItem("clausesaathi.analysis") ?? "{}");
     expect(stored.documentText).toContain("1. Term");
+  });
+
+  it("warns when the text was transcribed from a scan or photo", async () => {
+    vi.stubGlobal("fetch", vi.fn(fetchJson({ ...FIXTURE_RESPONSE, source: "transcription" })));
+    renderWithLocale(<AnalyzeWorkspace />);
+    const file = new File([new Uint8Array(8)], "page.jpg", { type: "image/jpeg" });
+    await userEvent.upload(screen.getByLabelText("Or upload a PDF or a photo"), file);
+    await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
+    await waitFor(() =>
+      expect(screen.getByText(/transcribed from your scan or photo/)).toBeInTheDocument(),
+    );
   });
 
   it("shows a translated error when the API refuses", async () => {

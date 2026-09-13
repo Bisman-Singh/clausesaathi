@@ -39,7 +39,8 @@ describe("api client", () => {
   });
 
   it("maps error codes to translation keys", () => {
-    expect(errorKeyFor(new ApiError("pdf_no_text", 400))).toBe("errorPdfNoText");
+    expect(errorKeyFor(new ApiError("pdf_no_text", 400))).toBe("errorNoTextFound");
+    expect(errorKeyFor(new ApiError("no_text_found", 400))).toBe("errorNoTextFound");
     expect(errorKeyFor(new ApiError("weird", 400))).toBe("errorGeneric");
     expect(errorKeyFor(new Error("x"))).toBe("errorGeneric");
   });

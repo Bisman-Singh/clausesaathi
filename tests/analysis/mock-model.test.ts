@@ -5,6 +5,7 @@ import type { DocumentBriefWire } from "@/lib/analysis/schemas";
 import { diffDocuments } from "@/lib/compare/diff";
 import { explainChanges } from "@/lib/compare/explain";
 import { segmentDocument } from "@/lib/document/segment";
+import { transcribeFile } from "@/lib/document/transcribe";
 import { RENT_AGREEMENT_V1, RENT_AGREEMENT_V2 } from "@/lib/samples";
 import type { IndiaCodeClient } from "@/lib/statute/indiacode";
 
@@ -72,5 +73,25 @@ describe("real generateText through a mock model", () => {
     });
     expect(result.explanations).toHaveLength(1);
     expect(result.model).toBe("google/gemini-3.6-flash");
+  });
+
+  it("transcribes a file through the real generateText with a file part", async () => {
+    const model = new MockLanguageModelV4({
+      doGenerate: {
+        content: [{ type: "text", text: RENT_AGREEMENT_V1 }],
+        finishReason: { unified: "stop", raw: "STOP" },
+        usage,
+        warnings: [],
+      },
+    });
+    const result = await transcribeFile(
+      { bytes: new Uint8Array([1, 2, 3]), mediaType: "image/png" },
+      { factory: () => model, env },
+    );
+    expect(result?.text).toBe(RENT_AGREEMENT_V1.trim());
+    expect(result?.model).toBe("google/gemini-3.6-flash");
+    const prompt = model.doGenerateCalls[0]?.prompt ?? [];
+    const user = prompt.find((message) => message.role === "user");
+    expect(JSON.stringify(user)).toContain('"mediaType":"image/png"');
   });
 });

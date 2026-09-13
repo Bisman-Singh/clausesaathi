@@ -2,6 +2,7 @@ import type { AnalysisResult } from "@/lib/analysis/schemas";
 import type { ClauseChange, ClauseChangeKind } from "@/lib/compare/diff";
 import type { ChangeExplanation } from "@/lib/compare/explain";
 import type { ParsedDocument } from "@/lib/document/types";
+import type { DocumentSource } from "@/lib/http/analyze-input";
 import type { TranslationKey } from "@/lib/i18n";
 
 /**
@@ -22,6 +23,8 @@ export class ApiError extends Error {
 export interface AnalyzeResponse {
   document: ParsedDocument;
   result: AnalysisResult;
+  /** Where the text came from; transcriptions get a "check the original" notice. */
+  source: DocumentSource;
 }
 
 export interface CompareResponse {
@@ -34,10 +37,13 @@ export interface CompareResponse {
 const ERROR_KEYS: Record<string, TranslationKey> = {
   too_short: "errorTooShort",
   too_long: "errorTooLong",
-  pdf_too_large: "errorPdfTooLarge",
+  file_too_large: "errorFileTooLarge",
+  pdf_too_large: "errorFileTooLarge",
+  pdf_no_text: "errorNoTextFound",
+  unsupported_file: "errorUnsupportedFile",
   pdf_too_many_pages: "errorPdfTooManyPages",
-  pdf_no_text: "errorPdfNoText",
   pdf_unreadable: "errorPdfUnreadable",
+  no_text_found: "errorNoTextFound",
   rate_limited: "errorRateLimited",
   ai_unavailable: "errorAiUnavailable",
 };

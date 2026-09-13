@@ -28,6 +28,11 @@ export class RateLimiter {
     return true;
   }
 
+  /** Forget every hit. Tests use it between cases; production never needs it. */
+  reset(): void {
+    this.hits.clear();
+  }
+
   private prune(cutoff: number): void {
     if (this.hits.size < 1000) return;
     for (const [key, times] of this.hits) {

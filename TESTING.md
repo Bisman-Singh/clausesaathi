@@ -19,6 +19,7 @@ branches, functions and lines, and CI fails below that. No file is excluded.
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Document segmentation | headings, titles, numbered single lines, clause limit, empty input, model rendering                                                              |
 | PDF extraction        | real PDFs generated in-test (multi-page, oversized, too many pages, no text, not a PDF)                                                          |
+| Uploads               | media type detection by declared type and extension, unsupported files, scan and photo transcription through the model, empty transcription      |
 | IndiaCode client      | request shape, caching, schema tolerance, HTTP errors, section parsing, ref parsing                                                              |
 | Jurisdiction          | state and regional detection in act titles, own-state preference, central fallback, never another state's law                                    |
 | AI layer              | model chain, fallback order, timeouts, error aggregation, provider construction                                                                  |

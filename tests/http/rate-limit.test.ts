@@ -26,3 +26,13 @@ describe("RateLimiter", () => {
     expect(AI_RATE_LIMIT).toEqual({ limit: 10, windowMs: 60_000 });
   });
 });
+
+describe("RateLimiter.reset", () => {
+  it("forgets every hit so a blocked caller is allowed again", () => {
+    const limiter = new RateLimiter(1, 60_000, () => 1_000);
+    expect(limiter.allow("a")).toBe(true);
+    expect(limiter.allow("a")).toBe(false);
+    limiter.reset();
+    expect(limiter.allow("a")).toBe(true);
+  });
+});

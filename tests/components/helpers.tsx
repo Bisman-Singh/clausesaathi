@@ -82,6 +82,7 @@ export const FIXTURE_RESULT: AnalysisResult = {
 export const FIXTURE_RESPONSE: AnalyzeResponse = {
   document: FIXTURE_DOCUMENT,
   result: FIXTURE_RESULT,
+  source: "text",
 };
 
 /** A fetch stub that answers with the given JSON body and status. */

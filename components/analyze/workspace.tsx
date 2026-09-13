@@ -92,7 +92,10 @@ export function AnalyzeWorkspace() {
       </section>
 
       {analysis ? (
-        <div ref={resultRef}>
+        <div ref={resultRef} className="flex flex-col gap-6">
+          {analysis.response.source === "transcription" ? (
+            <Alert tone="warn">{t("noticeTranscribed")}</Alert>
+          ) : null}
           <AnalysisView
             document={analysis.response.document}
             result={analysis.response.result}

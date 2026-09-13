@@ -25,8 +25,9 @@ quota, and the usual web application classes (XSS, clickjacking, CSRF).
 
 - Same-origin enforcement via `Sec-Fetch-Site`, with an `Origin`/`Host` match as
   fallback, so cross-site pages cannot spend the AI quota or submit documents.
-- Declared and actual body size caps before parsing; PDFs are checked for size
-  and page count before extraction.
+- Declared and actual body size caps before parsing; uploads are checked for
+  type and size, and PDFs for page count, before any bytes are read or sent to
+  a model.
 - Every body is validated with Zod; unknown shapes are rejected with 400.
 - Sliding-window rate limit per client address on all AI-backed routes (429).
 - Errors map to stable codes; internal messages never reach the client.

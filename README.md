@@ -98,7 +98,8 @@ LIVE_AI=1 npm test -- tests/live
 ## Tech stack
 
 Next.js 16 (App Router), React 19, TypeScript, Vercel AI SDK with the Google
-provider, Zod, Tailwind CSS v4, unpdf for PDF text, Vitest with Testing Library
+provider, Zod, Tailwind CSS v4, unpdf for PDF text, Gemini vision for scans and
+photos, Vitest with Testing Library
 and axe. Deployed on Vercel.
 
 ## Project layout
@@ -110,7 +111,7 @@ lib/ai          model chain and fallback
 lib/analysis    schemas, prompts, citation verification, statute attachment
 lib/compare     deterministic clause diff and change explanations
 lib/deadlines   date arithmetic for obligations
-lib/document    segmentation and PDF text extraction
+lib/document    segmentation, PDF text extraction, scan and photo transcription
 lib/http        request guards, rate limiting, input parsing
 lib/i18n        English and Hindi strings, checked for parity
 lib/legal-aid   Section 12 eligibility
