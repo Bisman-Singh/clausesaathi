@@ -39,7 +39,29 @@ describe("attachStatutes", () => {
     expect(result[1]?.statute).toBeNull();
     expect(result[2]?.statute).toBeNull();
     expect(client.search).toHaveBeenCalledTimes(1);
-    expect(client.search).toHaveBeenCalledWith("penalty clause", 5);
+    expect(client.search).toHaveBeenCalledWith("penalty clause", 10);
+  });
+
+  it("searches with the state first and keeps a state match, else falls back to a plain search", async () => {
+    const own: StatuteHit = {
+      ...hit,
+      act: "The Kerala Buildings (Lease and Rent Control) Act, 1965",
+    };
+    const client: IndiaCodeClient = {
+      search: vi.fn(async (query: string) => (query.endsWith("Kerala") ? [own] : [hit])),
+      getSection: vi.fn(),
+    };
+    const [first] = await attachStatutes([risk(1, "rent control")], client, "Kerala");
+    expect(first?.statute?.act).toBe(own.act);
+    expect(client.search).toHaveBeenCalledWith("rent control Kerala", 10);
+
+    const central: IndiaCodeClient = {
+      search: vi.fn(async () => [hit]),
+      getSection: vi.fn(),
+    };
+    const [second] = await attachStatutes([risk(1, "penalty")], central, "Kerala");
+    expect(second?.statute?.act).toBe(hit.act);
+    expect(central.search).toHaveBeenCalledTimes(2);
   });
 
   it("caps the number of lookups per analysis", async () => {

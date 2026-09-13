@@ -1,10 +1,10 @@
 import type { Risk, RiskWithStatute, StatuteReference } from "@/lib/analysis/schemas";
 import type { IndiaCodeClient } from "@/lib/statute/indiacode";
-import { pickForJurisdiction, type IndianState } from "@/lib/statute/jurisdiction";
+import { isCentralAct, pickForJurisdiction, type IndianState } from "@/lib/statute/jurisdiction";
 import { LIMITS } from "@/lib/constants";
 
 /** How many hits to fetch so a jurisdiction preference has something to choose from. */
-const HITS_PER_QUERY = 5;
+const HITS_PER_QUERY = 10;
 
 /**
  * Attach a real statute passage to each risk that asked for one.
@@ -29,13 +29,29 @@ export async function attachStatutes(
   );
 }
 
+/** Try the state-qualified query first so the user's own act can surface. */
+async function searchWithPreference(
+  client: IndiaCodeClient,
+  query: string,
+  state: IndianState | null,
+) {
+  if (state) {
+    const own = pickForJurisdiction(
+      await client.search(`${query} ${state}`, HITS_PER_QUERY),
+      state,
+    );
+    if (own && !isCentralAct(own.act)) return own;
+  }
+  return pickForJurisdiction(await client.search(query, HITS_PER_QUERY), state);
+}
+
 async function lookup(
   client: IndiaCodeClient,
   query: string,
   state: IndianState | null,
 ): Promise<StatuteReference | null> {
   try {
-    const hit = pickForJurisdiction(await client.search(query, HITS_PER_QUERY), state);
+    const hit = await searchWithPreference(client, query, state);
     if (!hit) return null;
     return { act: hit.act, title: hit.title, snippet: hit.snippet, url: hit.url };
   } catch (error) {

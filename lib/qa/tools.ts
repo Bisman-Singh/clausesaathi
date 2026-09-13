@@ -17,7 +17,7 @@ export function statuteTools(client: IndiaCodeClient, state: IndianState | null)
           .describe("Plain search phrase, e.g. 'security deposit refund'"),
       }),
       execute: async ({ query }) => {
-        const hits = await client.search(query, 5);
+        const hits = await client.search(query, 10);
         const best = pickForJurisdiction(hits, state);
         if (!best) return { found: false as const };
         return {

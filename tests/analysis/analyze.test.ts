@@ -42,11 +42,11 @@ const generated: DocumentBriefWire = {
 const statutes: IndiaCodeClient = {
   search: vi.fn(async () => [
     {
-      ref: "delhi-rent-control-act-1958/28",
+      ref: "karnataka-rent-act-1999/22",
       title: "Time limit for making deposit",
-      act: "The Delhi Rent Control Act, 1958",
+      act: "The Karnataka Rent Act, 1999",
       snippet: "…",
-      url: "https://indiacode.ecourtsindia.com/delhi-rent-control-act-1958/section/28/",
+      url: "https://indiacode.ecourtsindia.com/karnataka-rent-act-1999/section/22/",
     },
   ]),
   getSection: vi.fn(),
@@ -67,7 +67,7 @@ describe("analyzeDocument", () => {
     expect(result.model).toBe("google/gemini-3.6-flash");
     expect(result.droppedCitations).toBe(1);
     expect(result.brief.risks).toHaveLength(1);
-    expect(result.brief.risks[0]?.statute?.act).toBe("The Delhi Rent Control Act, 1958");
+    expect(result.brief.risks[0]?.statute?.act).toBe("The Karnataka Rent Act, 1999");
     expect(result.brief.obligations[0]?.deadline).toEqual({
       kind: "relative",
       days: 30,
