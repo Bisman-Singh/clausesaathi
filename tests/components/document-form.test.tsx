@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 import { describe, expect, it, vi } from "vitest";
@@ -67,6 +67,10 @@ describe("DocumentForm", () => {
     await userEvent.upload(input, big);
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
     expect(screen.getByRole("alert")).toHaveTextContent("larger than 5 MB");
+
+    fireEvent.change(input, { target: { files: [] } });
+    await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Please paste some text");
   });
 
   it("submits typed text once it is long enough", async () => {

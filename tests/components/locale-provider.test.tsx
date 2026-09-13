@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   LocaleProvider,
@@ -88,6 +89,15 @@ describe("LocaleProvider", () => {
     await userEvent.click(screen.getByRole("button", { name: "hi" }));
     expect(screen.getByTestId("locale")).toHaveTextContent("en");
     spy.mockRestore();
+  });
+
+  it("renders the default locale on the server", () => {
+    const html = renderToString(
+      <LocaleProvider>
+        <Probe />
+      </LocaleProvider>,
+    );
+    expect(html).toContain("ClauseSaathi");
   });
 
   it("accepts a write with no storage at all", () => {

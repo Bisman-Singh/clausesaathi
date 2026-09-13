@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ClauseSaathi">
+  <rect width="64" height="64" rx="12" fill="#7c2d12"/>
+  <rect x="16" y="12" width="32" height="40" rx="3" fill="#fbfaf7"/>
+  <rect x="22" y="22" width="20" height="3" rx="1.5" fill="#7c2d12"/>
+  <rect x="22" y="30" width="20" height="3" rx="1.5" fill="#7c2d12"/>
+  <rect x="22" y="38" width="12" height="3" rx="1.5" fill="#7c2d12"/>
+  <circle cx="44" cy="44" r="7" fill="#fdba74"/>
+  <path d="M40.5 44l2.5 2.5 5-5" stroke="#1c1917" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
