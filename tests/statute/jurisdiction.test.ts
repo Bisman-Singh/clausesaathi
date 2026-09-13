@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { StatuteHit } from "@/lib/statute/indiacode";
 import {
+  stateName,
   isCentralAct,
   isIndianState,
   pickForJurisdiction,
@@ -64,6 +65,13 @@ describe("pickForJurisdiction", () => {
     expect(pickForJurisdiction(stateOnly, null)?.act).toBe(hits[0]?.act);
     expect(pickForJurisdiction([], "Kerala")).toBeNull();
     expect(pickForJurisdiction([], null)).toBeNull();
+  });
+});
+
+describe("stateName", () => {
+  it("writes the state in the interface language", () => {
+    expect(stateName("Karnataka", "hi")).toBe("कर्नाटक");
+    expect(stateName("Karnataka", "en")).toBe("Karnataka");
   });
 });
 

@@ -112,6 +112,19 @@ describe("DocumentForm", () => {
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ state: "Kerala" }));
   });
 
+  it("says the file wins when text is pasted as well", async () => {
+    renderWithLocale(<DocumentForm busy={false} onSubmit={vi.fn()} />);
+    await userEvent.type(screen.getByLabelText("Document text"), "some pasted text");
+    expect(screen.queryByText(/The file will be analysed/)).toBeNull();
+    const file = new File(["%PDF-1.4"], "a.pdf", { type: "application/pdf" });
+    await userEvent.upload(screen.getByLabelText("Or upload a PDF or a photo"), file);
+    expect(screen.getByRole("status")).toHaveTextContent("The file will be analysed");
+    expect(screen.getByRole("button", { name: "Rent agreement" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
   it("submits typed text once it is long enough", async () => {
     const onSubmit = vi.fn();
     renderWithLocale(<DocumentForm busy={false} onSubmit={onSubmit} />);
@@ -122,8 +135,14 @@ describe("DocumentForm", () => {
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ text }));
   });
 
-  it("disables the button and shows progress text while busy", () => {
-    renderWithLocale(<DocumentForm busy onSubmit={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Reading the document…" })).toBeDisabled();
+  it("disables the button and shows progress text while busy", async () => {
+    const onSubmit = vi.fn();
+    renderWithLocale(<DocumentForm busy onSubmit={onSubmit} />);
+    expect(screen.getByRole("button", { name: "Reading the document…" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Reading the document…" }));
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });

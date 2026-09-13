@@ -42,14 +42,14 @@ export function SiteHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-10 border-b border-line bg-surface/95 backdrop-blur">
+    <header className="z-10 border-b border-line bg-surface/95 backdrop-blur md:sticky md:top-0">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold text-text no-underline">
           <Mark />
           <span className="font-heading">{t("appName")}</span>
         </Link>
-        <nav aria-label="Main">
-          <ul className="flex flex-wrap gap-1">
+        <nav aria-label={t("navMain")} className="max-w-full overflow-x-auto">
+          <ul className="flex gap-1 whitespace-nowrap">
             {NAV.map((item) => (
               <li key={item.href}>
                 <Link
@@ -68,7 +68,7 @@ export function SiteHeader() {
           <select
             value={locale}
             onChange={(event) => setLocale(event.target.value as Locale)}
-            className="min-h-11 rounded-md border border-line bg-surface px-2"
+            className="min-h-11 rounded-md border border-control-line bg-surface px-2"
           >
             {LOCALES.map((code) => (
               <option key={code} value={code} lang={code === "hi" ? "hi-IN" : "en-IN"}>

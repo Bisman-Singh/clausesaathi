@@ -10,7 +10,7 @@ const chat = {
   messages: [] as Array<{
     id: string;
     role: string;
-    parts: Array<{ type: string; text?: string }>;
+    parts: Array<{ type: string; text?: string; output?: unknown }>;
   }>,
   sendMessage: vi.fn(),
   status: "ready",
@@ -37,8 +37,8 @@ describe("AskPanel", () => {
     chat.messages = [];
     chat.status = "ready";
     renderWithLocale(<AskPanel documentText="doc" document={FIXTURE_DOCUMENT} state="" />);
-    const box = screen.getByLabelText("Ask a question about this document");
-    expect(screen.getByRole("button", { name: "Ask" })).toBeDisabled();
+    const box = screen.getByLabelText("Your question");
+    expect(screen.getByRole("button", { name: "Ask" })).toHaveAttribute("aria-disabled", "true");
     await userEvent.type(box, "  Can I leave early?  ");
     await userEvent.click(screen.getByRole("button", { name: "Ask" }));
     expect(chat.sendMessage).toHaveBeenCalledWith({ text: "Can I leave early?" });
@@ -51,7 +51,28 @@ describe("AskPanel", () => {
       {
         id: "2",
         role: "assistant",
-        parts: [{ type: "text", text: "A. See [c2] and [c99]." }, { type: "tool-lookupStatute" }],
+        parts: [
+          { type: "text", text: "A. See [c2] and [c99]." },
+          { type: "tool-lookupStatute", output: { found: false } },
+          {
+            type: "tool-lookupStatute",
+            output: {
+              found: true,
+              act: "The Transfer of Property Act, 1882",
+              section: "Relief against forfeiture",
+              url: "https://indiacode.ecourtsindia.com/tp-act/section/114/",
+            },
+          },
+          {
+            type: "tool-lookupStatute",
+            output: {
+              found: true,
+              act: "The Indian Contract Act, 1872",
+              section: "Penalty",
+              url: "https://indiacode.ecourtsindia.com/contract-act/section/74/",
+            },
+          },
+        ],
       },
     ];
     chat.status = "streaming";
@@ -63,9 +84,29 @@ describe("AskPanel", () => {
       "#clause-c2",
     );
     expect(screen.getByText(/\[c99\]/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: "The Transfer of Property Act, 1882, Relief against forfeiture",
+      }),
+    ).toHaveAttribute("href", "https://indiacode.ecourtsindia.com/tp-act/section/114/");
+    expect(screen.getByText(/Sources:/).parentElement).toHaveTextContent(
+      "; The Indian Contract Act",
+    );
     expect(screen.getByText("Thinking…")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("busy right now");
-    expect(screen.getByRole("button", { name: "Ask" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Ask" })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("announces a finished answer once, and shows nothing for answers without sources", () => {
+    chat.messages = [
+      { id: "1", role: "user", parts: [{ type: "text", text: "Q?" }] },
+      { id: "2", role: "assistant", parts: [{ type: "text", text: "Plain answer." }] },
+    ];
+    chat.status = "ready";
+    chat.error = undefined;
+    renderWithLocale(<AskPanel documentText="doc" document={FIXTURE_DOCUMENT} state="" />);
+    expect(screen.getByText("Answer ready")).toBeInTheDocument();
+    expect(screen.queryByText(/Sources:/)).toBeNull();
   });
 
   it("ignores an empty submission", () => {
@@ -86,7 +127,7 @@ describe("AskPanel", () => {
     chat.error = undefined;
     chat.sendMessage.mockClear();
     renderWithLocale(<AskPanel documentText="doc" document={FIXTURE_DOCUMENT} state="" />);
-    await userEvent.type(screen.getByLabelText("Ask a question about this document"), "Q{enter}");
+    await userEvent.type(screen.getByLabelText("Your question"), "Q{enter}");
     expect(chat.sendMessage).not.toHaveBeenCalled();
   });
 });

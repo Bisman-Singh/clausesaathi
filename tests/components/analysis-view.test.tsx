@@ -5,6 +5,7 @@ import { axe } from "vitest-axe";
 import { describe, expect, it, vi } from "vitest";
 import { AnalysisView } from "@/components/analyze/analysis-view";
 import { Timeline } from "@/components/analyze/timeline";
+import { resetLocaleStore, writeLocale } from "@/components/locale-provider";
 import { FIXTURE_DOCUMENT, FIXTURE_RESULT, renderWithLocale } from "@/tests/components/helpers";
 
 vi.mock("@ai-sdk/react", () => ({
@@ -30,7 +31,7 @@ describe("AnalysisView", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "On this page" })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "At a glance" })).toBeInTheDocument();
-    expect(screen.getByText("citation(s) the AI made up were removed")).toBeInTheDocument();
+    expect(screen.getByText(/invented citation/)).toBeInTheDocument();
     expect(screen.getByText(/no matching provision for Karnataka/)).toBeInTheDocument();
     for (const name of [
       "In plain language",
@@ -81,7 +82,7 @@ describe("AnalysisView", () => {
         today="2026-09-13"
       />,
     );
-    expect(screen.queryByText(/made up were removed/)).toBeNull();
+    expect(screen.queryByText(/invented citation/)).toBeNull();
     expect(screen.getByText("No citations.")).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Key terms" })).toBeNull();
     expect(screen.queryByRole("region", { name: "Options to consider" })).toBeNull();
@@ -106,15 +107,31 @@ describe("Timeline", () => {
     expect(before[1]).toContain("Enter the date of");
     expect(before.at(-1)).toContain("No deadline stated");
 
-    await userEvent.type(screen.getByLabelText("termination or vacating"), "2026-09-01");
+    await userEvent.type(screen.getByLabelText("Date of termination or vacating"), "2026-09-01");
     const after = within(list)
       .getAllByRole("listitem")
       .map((item) => item.textContent);
     expect(
-      after.some((text) => text?.includes("2026-11-30") && text.includes("78 days left")),
+      after.some((text) => text?.includes("30 November 2026") && text.includes("78 days left")),
     ).toBe(true);
-    await userEvent.clear(screen.getByLabelText("termination or vacating"));
+    await userEvent.clear(screen.getByLabelText("Date of termination or vacating"));
     expect(within(list).getAllByRole("listitem")[1]?.textContent).toContain("Enter the date of");
+  });
+
+  it("writes dates in Hindi when the interface is Hindi", () => {
+    writeLocale("hi", null);
+    try {
+      renderWithLocale(
+        <Timeline
+          document={FIXTURE_DOCUMENT}
+          obligations={FIXTURE_RESULT.brief.obligations}
+          today="2026-09-13"
+        />,
+      );
+      expect(screen.getByText(/20 सितंबर 2026/)).toBeInTheDocument();
+    } finally {
+      resetLocaleStore();
+    }
   });
 
   it("describes overdue and same-day deadlines", () => {

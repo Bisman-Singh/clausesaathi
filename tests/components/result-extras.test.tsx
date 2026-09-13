@@ -36,11 +36,11 @@ describe("AtAGlance and presentSections", () => {
   it("counts risks by severity and the other headline numbers", () => {
     renderWithLocale(<AtAGlance result={FIXTURE_RESULT} />);
     const list = screen.getByRole("list", { name: "At a glance" });
-    expect(within(list).getByText("1 High risk(s)")).toBeInTheDocument();
-    expect(within(list).getByText("1 Medium risk(s)")).toBeInTheDocument();
-    expect(within(list).queryByText(/Low risk/)).not.toBeInTheDocument();
-    expect(within(list).getByText(/obligations$/)).toBeInTheDocument();
-    expect(within(list).getByText(/questions for a lawyer$/)).toBeInTheDocument();
+    expect(within(list).getByText("High risks: 1")).toBeInTheDocument();
+    expect(within(list).getByText("Medium risks: 1")).toBeInTheDocument();
+    expect(within(list).queryByText(/Low risks/)).not.toBeInTheDocument();
+    expect(within(list).getByText(/^Obligations: \d+$/)).toBeInTheDocument();
+    expect(within(list).getByText(/^Questions for a lawyer: \d+$/)).toBeInTheDocument();
   });
 
   it("shows a low-severity chip when that is all there is", () => {
@@ -48,7 +48,7 @@ describe("AtAGlance and presentSections", () => {
     renderWithLocale(
       <AtAGlance result={{ ...FIXTURE_RESULT, brief: { ...FIXTURE_RESULT.brief, risks } }} />,
     );
-    expect(screen.getByText("2 Low risk(s)")).toBeInTheDocument();
+    expect(screen.getByText("Low risks: 2")).toBeInTheDocument();
   });
 
   it("lists only the sections the brief has content for", () => {

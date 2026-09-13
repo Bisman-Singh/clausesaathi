@@ -12,8 +12,8 @@ export function ClauseList({ document }: { document: ParsedDocument }) {
           tabIndex={-1}
           className="rounded-lg border border-line bg-surface p-3 target:border-accent target:bg-accent-soft"
         >
-          {clause.heading ? <h3 className="font-semibold">{clause.heading}</h3> : null}
-          <p className="whitespace-pre-wrap">{clause.text}</p>
+          {clause.heading ? <h4 className="font-semibold">{clause.heading}</h4> : null}
+          <p className="whitespace-pre-wrap break-words">{clause.text}</p>
         </li>
       ))}
     </ol>

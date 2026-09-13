@@ -1,10 +1,11 @@
 "use client";
 
 import { useId, useState } from "react";
-import { useT } from "@/components/locale-provider";
+import { useLocale, useT } from "@/components/locale-provider";
 import { ClauseLink } from "@/components/analyze/clause-link";
 import { CONTROL_CLASS } from "@/components/ui/field";
 import type { Obligation } from "@/lib/analysis/schemas";
+import type { Locale } from "@/lib/constants";
 import {
   buildTimeline,
   requiredAnchors,
@@ -28,6 +29,7 @@ export interface TimelineProps {
  */
 export function Timeline({ document, obligations, today }: TimelineProps) {
   const t = useT();
+  const { locale } = useLocale();
   const id = useId();
   const [anchors, setAnchors] = useState<AnchorDates>({});
   const needed = requiredAnchors(obligations);
@@ -42,7 +44,9 @@ export function Timeline({ document, obligations, today }: TimelineProps) {
           <div className="grid gap-3 sm:grid-cols-2">
             {needed.map((key) => (
               <div key={key} className="flex flex-col gap-1">
-                <label htmlFor={`${id}-${key}`}>{t(`anchor_${key}` as TranslationKey)}</label>
+                <label htmlFor={`${id}-${key}`}>
+                  {t("anchorDateLabel", { anchor: t(`anchor_${key}` as TranslationKey) })}
+                </label>
                 <input
                   id={`${id}-${key}`}
                   type="date"
@@ -69,7 +73,16 @@ export function Timeline({ document, obligations, today }: TimelineProps) {
               <ClauseLink document={document} clauseId={obligation.clauseId} />
             </p>
             <p className="text-sm text-muted">
-              <DeadlineText resolved={resolved} translate={t} />
+              <DeadlineText resolved={resolved} translate={t} locale={locale} />
+              {obligation.deadline.kind === "relative" ? (
+                <>
+                  {" · "}
+                  {t("timelineFrom", {
+                    days: obligation.deadline.days,
+                    from: obligation.deadline.from,
+                  })}
+                </>
+              ) : null}
             </p>
           </li>
         ))}
@@ -81,9 +94,19 @@ export function Timeline({ document, obligations, today }: TimelineProps) {
 interface DeadlineTextProps {
   resolved: ResolvedDeadline;
   translate: (key: TranslationKey) => string;
+  locale: Locale;
 }
 
-function DeadlineText({ resolved, translate }: DeadlineTextProps) {
+/** An ISO date as the reader would write it, inside a machine-readable `time`. */
+function LongDate({ iso, locale }: { iso: string; locale: Locale }) {
+  const formatted = new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", {
+    dateStyle: "long",
+    timeZone: "UTC",
+  }).format(new Date(`${iso}T00:00:00Z`));
+  return <time dateTime={iso}>{formatted}</time>;
+}
+
+function DeadlineText({ resolved, translate, locale }: DeadlineTextProps) {
   if (resolved.status === "unspecified") return <>{translate("timelineUnspecified")}</>;
   if (resolved.status === "needs_anchor") {
     return (
@@ -95,7 +118,7 @@ function DeadlineText({ resolved, translate }: DeadlineTextProps) {
   }
   return (
     <>
-      {translate("timelineDated")} {resolved.date} ·{" "}
+      {translate("timelineDated")} <LongDate iso={resolved.date} locale={locale} /> ·{" "}
       <DaysLeft days={resolved.daysLeft} translate={translate} />
     </>
   );

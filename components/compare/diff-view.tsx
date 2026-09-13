@@ -52,13 +52,13 @@ export function DiffView({ changes, explanations, summary }: DiffViewProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="flex flex-wrap gap-2 text-sm" aria-label="Summary">
+      <ul className="flex flex-wrap gap-2 text-sm" aria-label={t("compareSummary")}>
         {(Object.keys(summary) as ClauseChangeKind[]).map((kind) => (
-          <span key={kind} className={`rounded px-2 py-0.5 ${KIND_STYLE[kind]}`}>
+          <li key={kind} className={`rounded px-2 py-0.5 ${KIND_STYLE[kind]}`}>
             {summary[kind]} {t(KIND_KEY[kind])}
-          </span>
+          </li>
         ))}
-      </p>
+      </ul>
       {nothingChanged ? <p>{t("compareNoChanges")}</p> : null}
       <ol className="flex flex-col gap-3">
         {changes.map((change, index) => (
@@ -70,11 +70,22 @@ export function DiffView({ changes, explanations, summary }: DiffViewProps) {
               <span className={`rounded px-2 py-0.5 text-sm ${KIND_STYLE[change.kind]}`}>
                 {t(KIND_KEY[change.kind])}
               </span>
-              <span className="font-medium">
-                {change.after?.heading ?? change.before?.heading ?? ""}
-              </span>
+              <h3 className="text-base font-medium">
+                {change.after?.heading ??
+                  change.before?.heading ??
+                  t("compareClause", { n: index + 1 })}
+              </h3>
             </p>
-            <ChangeBody change={change} />
+            {change.kind === "unchanged" ? (
+              <details>
+                <summary className="cursor-pointer text-sm text-muted">
+                  {t("compareShowUnchanged")}
+                </summary>
+                <ChangeBody change={change} />
+              </details>
+            ) : (
+              <ChangeBody change={change} />
+            )}
             <Explanation item={byIndex.get(index)} />
           </li>
         ))}
@@ -86,7 +97,7 @@ export function DiffView({ changes, explanations, summary }: DiffViewProps) {
 function ChangeBody({ change }: { change: ClauseChange }) {
   if (change.kind === "modified" && change.segments) {
     return (
-      <p className="whitespace-pre-wrap">
+      <p className="whitespace-pre-wrap break-words">
         {change.segments.map((segment, index) => (
           <Segment key={index} segment={segment} />
         ))}
@@ -94,14 +105,26 @@ function ChangeBody({ change }: { change: ClauseChange }) {
     );
   }
   if (change.kind === "modified") {
-    return (
-      <div className="grid gap-2 sm:grid-cols-2">
-        <p className="whitespace-pre-wrap">{change.before?.text}</p>
-        <p className="whitespace-pre-wrap">{change.after?.text}</p>
-      </div>
-    );
+    return <SideBySide change={change} />;
   }
-  return <p className="whitespace-pre-wrap">{(change.after ?? change.before)?.text}</p>;
+  return <p className="whitespace-pre-wrap break-words">{(change.after ?? change.before)?.text}</p>;
+}
+
+/** Long modified clauses skip the word diff; the two versions are shown labelled instead. */
+function SideBySide({ change }: { change: ClauseChange }) {
+  const t = useT();
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      <div>
+        <h4 className="visually-hidden">{t("compareBeforeLabel")}</h4>
+        <p className="whitespace-pre-wrap break-words">{change.before?.text}</p>
+      </div>
+      <div>
+        <h4 className="visually-hidden">{t("compareAfterLabel")}</h4>
+        <p className="whitespace-pre-wrap break-words">{change.after?.text}</p>
+      </div>
+    </div>
+  );
 }
 
 function Segment({ segment }: { segment: DiffSegment }) {

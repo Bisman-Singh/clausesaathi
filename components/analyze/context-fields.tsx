@@ -1,10 +1,10 @@
 "use client";
 
 import { LocationButton } from "@/components/analyze/location-button";
-import { useT } from "@/components/locale-provider";
+import { useLocale, useT } from "@/components/locale-provider";
 import { CONTROL_CLASS, Field } from "@/components/ui/field";
 import { LIMITS } from "@/lib/constants";
-import { INDIAN_STATES, type IndianState } from "@/lib/statute/jurisdiction";
+import { INDIAN_STATES, stateName, type IndianState } from "@/lib/statute/jurisdiction";
 
 /** Where the current value of the state select came from. */
 export type StateSource =
@@ -47,6 +47,7 @@ export function ContextFields({
   stateSource,
 }: ContextFieldsProps) {
   const t = useT();
+  const { locale } = useLocale();
   return (
     <>
       <Field
@@ -79,7 +80,7 @@ export function ContextFields({
             <option value="">{t("formStatePlaceholder")}</option>
             {INDIAN_STATES.map((name) => (
               <option key={name} value={name}>
-                {name}
+                {stateName(name, locale)}
               </option>
             ))}
           </select>

@@ -162,7 +162,7 @@ describe("clause helpers", () => {
     expect(clauseAnchor("c2")).toBe("clause-c2");
     expect(clauseLabel(doc, "c1", "en")).toBe("1. Rent");
     expect(clauseLabel(doc, "c2", "en")).toBe("Clause 2");
-    expect(clauseLabel(doc, "c2", "hi")).toBe("धारा 2");
+    expect(clauseLabel(doc, "c2", "hi")).toBe("खंड 2");
     expect(clauseLabel(doc, "c9", "en")).toBe("Clause 9");
   });
 });

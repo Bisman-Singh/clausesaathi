@@ -43,6 +43,45 @@ export const INDIAN_STATES = [
 ] as const;
 export type IndianState = (typeof INDIAN_STATES)[number];
 
+/** How each state is written in Hindi; the value sent to the server stays the English name. */
+export const STATE_NAMES_HI: Record<IndianState, string> = {
+  "Andhra Pradesh": "आंध्र प्रदेश",
+  "Arunachal Pradesh": "अरुणाचल प्रदेश",
+  Assam: "असम",
+  Bihar: "बिहार",
+  Chhattisgarh: "छत्तीसगढ़",
+  Delhi: "दिल्ली",
+  Goa: "गोवा",
+  Gujarat: "गुजरात",
+  Haryana: "हरियाणा",
+  "Himachal Pradesh": "हिमाचल प्रदेश",
+  "Jammu and Kashmir": "जम्मू और कश्मीर",
+  Jharkhand: "झारखंड",
+  Karnataka: "कर्नाटक",
+  Kerala: "केरल",
+  "Madhya Pradesh": "मध्य प्रदेश",
+  Maharashtra: "महाराष्ट्र",
+  Manipur: "मणिपुर",
+  Meghalaya: "मेघालय",
+  Mizoram: "मिज़ोरम",
+  Nagaland: "नागालैंड",
+  Odisha: "ओडिशा",
+  Punjab: "पंजाब",
+  Rajasthan: "राजस्थान",
+  Sikkim: "सिक्किम",
+  "Tamil Nadu": "तमिलनाडु",
+  Telangana: "तेलंगाना",
+  Tripura: "त्रिपुरा",
+  "Uttar Pradesh": "उत्तर प्रदेश",
+  Uttarakhand: "उत्तराखंड",
+  "West Bengal": "पश्चिम बंगाल",
+};
+
+/** A state's name in the interface language. */
+export function stateName(state: IndianState, locale: "en" | "hi"): string {
+  return locale === "hi" ? STATE_NAMES_HI[state] : state;
+}
+
 /** Older or local names that mark an act as regional even without a state name. */
 const REGIONAL_TERMS = [
   "Ajmer",

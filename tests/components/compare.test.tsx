@@ -77,8 +77,10 @@ describe("CompareWorkspace", () => {
     await userEvent.type(screen.getByLabelText("Earlier version"), "a");
     await userEvent.type(screen.getByLabelText("Later version"), "b");
     await userEvent.click(screen.getByRole("button", { name: "Compare versions" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("too short");
-    await userEvent.click(screen.getByRole("button", { name: "Or try a sample" }));
+    const alerts = screen.getAllByRole("alert");
+    expect(alerts).toHaveLength(2);
+    expect(alerts[0]).toHaveTextContent("at least 80 characters");
+    await userEvent.click(screen.getByRole("button", { name: "Load the sample rent agreement" }));
     expect(screen.getByLabelText("Earlier version")).toHaveValue(RENT_AGREEMENT_V1);
     await userEvent.click(screen.getByRole("button", { name: "Compare versions" }));
     await waitFor(() => expect(screen.getByText(/\d+ unchanged/)).toBeInTheDocument());
@@ -87,8 +89,21 @@ describe("CompareWorkspace", () => {
   it("shows an error when the API fails", async () => {
     vi.stubGlobal("fetch", vi.fn(fetchJson({ error: "ai_unavailable" }, 503)));
     renderWithLocale(<CompareWorkspace />);
-    await userEvent.click(screen.getByRole("button", { name: "Or try a sample" }));
+    await userEvent.click(screen.getByRole("button", { name: "Load the sample rent agreement" }));
     await userEvent.click(screen.getByRole("button", { name: "Compare versions" }));
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("busy right now"));
+  });
+
+  it("ignores a second submit while a comparison is running", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    );
+    renderWithLocale(<CompareWorkspace />);
+    await userEvent.click(screen.getByRole("button", { name: "Load the sample rent agreement" }));
+    await userEvent.click(screen.getByRole("button", { name: "Compare versions" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Comparing…");
+    await userEvent.click(screen.getByRole("button", { name: "Comparing…" }));
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

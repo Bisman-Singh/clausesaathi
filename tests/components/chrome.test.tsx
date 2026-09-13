@@ -43,7 +43,7 @@ describe("site chrome", () => {
     expect(await axe(container)).toHaveNoViolations();
 
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Language" }), "hi");
-    expect(screen.getByRole("link", { name: "दो संस्करण मिलाएँ" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "दो संस्करणों की तुलना करें" })).toBeInTheDocument();
     expect(screen.getByText(/कानूनी सलाह नहीं/)).toBeInTheDocument();
   });
 });

@@ -62,6 +62,7 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
     const trimmed = text.trim();
     const problem = validateInput(trimmed, file);
     setErrorKey(problem);
@@ -83,31 +84,33 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
     setSampleId(null);
   }
 
+  function changeFile(next: File | null) {
+    setFile(next);
+    setErrorKey(null);
+  }
+
+  const { textError, fileError } = splitError(errorKey, t);
+
   return (
     <form
       onSubmit={handleSubmit}
       noValidate
       aria-busy={busy}
-      className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
+      className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:grid-rows-[auto_auto]"
     >
-      <div className="flex flex-col gap-5">
-        <TextField
-          id={`${id}-text`}
-          text={text}
-          onChange={changeText}
-          error={errorKey ? t(errorKey) : null}
-        />
-        <Dropzone
-          id={`${id}-file`}
-          label={t("formFileLabel")}
-          hint={t("formFileHint")}
-          accept={UPLOAD_ACCEPT}
-          file={file}
-          onChange={setFile}
-        />
-      </div>
+      <InputColumn
+        id={id}
+        text={text}
+        onText={changeText}
+        textError={textError}
+        file={file}
+        fileError={fileError}
+        onFile={changeFile}
+        busy={busy}
+      />
 
-      <div className="flex flex-col gap-5 rounded-xl bg-surface-2 p-4 sm:p-5">
+      <div className="flex flex-col gap-5 rounded-xl bg-surface-2 p-4 sm:p-5 lg:row-span-2">
+        <h3 className="text-base font-semibold">{t("formOptionalHeading")}</h3>
         <SampleSelect id={`${id}-sample`} selectedId={sampleId} onChoose={chooseSample} />
         <ContextFields
           idPrefix={id}
@@ -118,13 +121,51 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
           onLocate={setLocatedState}
           stateSource={source}
         />
-        <div className="mt-auto">
-          <Button type="submit" disabled={busy} className="w-full">
-            {busy ? t("formSubmitting") : t("formSubmit")}
-          </Button>
-        </div>
+      </div>
+
+      <div className="lg:col-start-1">
+        <SubmitButton busy={busy} />
       </div>
     </form>
+  );
+}
+
+/** Error keys that concern the uploaded file rather than the pasted text. */
+const FILE_ERRORS = new Set<TranslationKey>(["errorFileTooLarge", "errorUnsupportedFile"]);
+
+/** A file error belongs on the file control; everything else on the text box. */
+function splitError(
+  errorKey: TranslationKey | null,
+  t: (key: TranslationKey) => string,
+): { textError: string | null; fileError: string | null } {
+  if (!errorKey) return { textError: null, fileError: null };
+  const message = t(errorKey);
+  return FILE_ERRORS.has(errorKey)
+    ? { textError: null, fileError: message }
+    : { textError: message, fileError: null };
+}
+
+/** Says which input wins when both a file and pasted text are present. */
+function FileOverridesHint({ show }: { show: boolean }) {
+  const t = useT();
+  if (!show) return null;
+  return (
+    <p className="text-sm text-warn-text" role="status">
+      {t("formFileOverridesText")}
+    </p>
+  );
+}
+
+/**
+ * Stays focusable while busy (a disabled button drops keyboard focus to the
+ * page); the form ignores a second submit through `aria-busy` instead.
+ */
+function SubmitButton({ busy }: { busy: boolean }) {
+  const t = useT();
+  return (
+    <Button type="submit" aria-disabled={busy} className="w-full">
+      {busy ? t("formSubmitting") : t("formSubmit")}
+    </Button>
   );
 }
 
@@ -178,16 +219,51 @@ function TextField({ id, text, onChange, error }: TextFieldProps) {
             value={text}
             onChange={(event) => onChange(event.target.value)}
             rows={14}
-            maxLength={LIMITS.MAX_DOCUMENT_CHARS}
-            aria-describedby={describedBy}
+            aria-describedby={[describedBy, `${id}-count`].filter(Boolean).join(" ")}
             aria-invalid={invalid}
             className={`${CONTROL_CLASS} font-mono text-sm leading-relaxed`}
           />
-          <p className="text-right text-xs text-muted" aria-hidden="true">
+          <p id={`${id}-count`} className="text-right text-xs text-muted">
             {count}
           </p>
         </>
       )}
     </Field>
+  );
+}
+
+interface InputColumnProps {
+  id: string;
+  text: string;
+  onText: (value: string) => void;
+  textError: string | null;
+  file: File | null;
+  fileError: string | null;
+  onFile: (file: File | null) => void;
+  busy: boolean;
+}
+
+/** The document itself: the text box and the file picker. */
+function InputColumn(props: InputColumnProps) {
+  const t = useT();
+  return (
+    <div className="flex flex-col gap-5">
+      <TextField
+        id={`${props.id}-text`}
+        text={props.text}
+        onChange={props.onText}
+        error={props.textError}
+      />
+      <Dropzone
+        id={`${props.id}-file`}
+        label={t("formFileLabel")}
+        hint={t("formFileHint")}
+        error={props.fileError}
+        accept={UPLOAD_ACCEPT}
+        file={props.file}
+        onChange={props.onFile}
+      />
+      <FileOverridesHint show={props.file !== null && props.text.trim().length > 0} />
+    </div>
   );
 }

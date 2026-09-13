@@ -48,17 +48,18 @@ export function RiskList({ document, risks, state }: RiskListProps) {
             >
               {t(SEVERITY_KEY[risk.severity])}
             </span>
-            <h3 className="font-semibold">{risk.title}</h3>
+            <h4 className="font-semibold">{risk.title}</h4>
             <ClauseLink document={document} clauseId={risk.clauseId} />
           </div>
-          <p className="mt-2">{risk.explanation}</p>
+          <p className="mt-2 break-words">{risk.explanation}</p>
           {risk.statute ? (
             <p className="mt-2 text-sm">
               <span className="font-medium">{t("statuteLabel")}:</span> {risk.statute.act},{" "}
               {risk.statute.title}.{" "}
               <a href={risk.statute.url} rel="noopener">
                 {t("statuteSource")}
-              </a>
+              </a>{" "}
+              <span className="text-muted">{t("statuteCaveat")}</span>
             </p>
           ) : null}
           {!risk.statute && risk.statuteQuery ? (

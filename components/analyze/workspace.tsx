@@ -61,10 +61,14 @@ export function AnalyzeWorkspace() {
   const [errorKey, setErrorKey] = useState<TranslationKey | null>(null);
   const analysis = useSyncExternalStore(subscribeAnalysis, getSnapshot, readAnalysisOnServer);
   const resultRef = useRef<HTMLDivElement>(null);
+  // Focus moves to the result only when one has just arrived, never on a restored page.
+  const justArrived = useRef(false);
 
   useEffect(() => {
-    if (analysis && !busy)
+    if (analysis && !busy && justArrived.current) {
+      justArrived.current = false;
       resultRef.current?.querySelector<HTMLElement>("#result-heading")?.focus();
+    }
   }, [analysis, busy]);
 
   async function handleSubmit(values: DocumentFormValues) {
@@ -75,6 +79,7 @@ export function AnalyzeWorkspace() {
       const response = await analyze({ ...values, file, locale });
       const documentText = values.file ? textFromClauses(response) : values.text;
       const state = response.jurisdiction.state ?? "";
+      justArrived.current = true;
       writeAnalysis({ response, documentText, state } satisfies StoredAnalysis);
     } catch (error) {
       setErrorKey(errorKeyFor(error));
@@ -109,7 +114,11 @@ export function AnalyzeWorkspace() {
       </section>
 
       {analysis ? (
-        <div ref={resultRef} className="result-enter flex flex-col gap-6">
+        <div
+          ref={resultRef}
+          key={`${analysis.response.document.charCount}:${analysis.documentText.slice(0, 64)}`}
+          className="result-enter flex flex-col gap-6"
+        >
           {analysis.response.source === "transcription" ? (
             <Alert tone="warn">{t("noticeTranscribed")}</Alert>
           ) : null}

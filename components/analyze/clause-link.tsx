@@ -17,7 +17,7 @@ export function ClauseLink({ document, clauseId }: ClauseLinkProps) {
   return (
     <a
       href={`#${clauseAnchor(clauseId)}`}
-      className="inline-block rounded bg-info-bg px-1.5 py-0.5 text-sm text-info-text no-underline hover:underline"
+      className="inline-block rounded bg-info-bg px-1.5 py-1 text-sm text-info-text no-underline hover:underline"
       aria-label={`${t("clauseLink")}: ${label}`}
     >
       {label}

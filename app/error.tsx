@@ -11,7 +11,7 @@ export default function ErrorPage({ reset }: { error: Error; reset: () => void }
       <h1 className="text-2xl font-bold">{t("errorGeneric")}</h1>
       <div>
         <Button type="button" onClick={reset}>
-          {t("formSubmit")}
+          {t("retry")}
         </Button>
       </div>
     </section>

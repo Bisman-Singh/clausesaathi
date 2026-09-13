@@ -1,12 +1,13 @@
 "use client";
 
 import { AtAGlance } from "@/components/analyze/at-a-glance";
-import { useT } from "@/components/locale-provider";
+import { useLocale, useT } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { Jurisdiction } from "@/lib/statute/resolve";
 import type { AnalysisResult } from "@/lib/analysis/schemas";
 import type { TranslationKey } from "@/lib/i18n";
+import { stateName } from "@/lib/statute/jurisdiction";
 
 const LAWS_KEY: Record<Jurisdiction["basis"], TranslationKey> = {
   user: "resultLawsUser",
@@ -23,9 +24,10 @@ export interface BriefHeaderProps {
 /** Title plus the facts a reader should know before trusting the rest. */
 export function BriefHeader({ result, jurisdiction }: BriefHeaderProps) {
   const t = useT();
+  const { locale } = useLocale();
   const { brief } = result;
   const laws = jurisdiction.state
-    ? t(LAWS_KEY[jurisdiction.basis], { state: jurisdiction.state })
+    ? t(LAWS_KEY[jurisdiction.basis], { state: stateName(jurisdiction.state, locale) })
     : t("resultLawsNone");
 
   return (
@@ -48,6 +50,7 @@ export function BriefHeader({ result, jurisdiction }: BriefHeaderProps) {
           {t("printBrief")}
         </Button>
       </header>
+      <p className="rounded-lg bg-warn-bg px-3 py-2 text-sm text-warn-text">{t("resultNotice")}</p>
       <AtAGlance result={result} />
       <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
         <div>
@@ -62,13 +65,10 @@ export function BriefHeader({ result, jurisdiction }: BriefHeaderProps) {
           <dt className="inline font-medium">{t("resultModel")}: </dt>
           <dd className="inline text-muted">{result.model}</dd>
         </div>
-        {result.droppedCitations > 0 ? (
-          <div>
-            <dt className="inline font-medium">{result.droppedCitations} </dt>
-            <dd className="inline">{t("resultDropped")}</dd>
-          </div>
-        ) : null}
       </dl>
+      {result.droppedCitations > 0 ? (
+        <p className="text-sm">{t("resultDropped", { n: result.droppedCitations })}</p>
+      ) : null}
     </Card>
   );
 }

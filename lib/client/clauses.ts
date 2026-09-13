@@ -11,5 +11,5 @@ export function clauseLabel(document: ParsedDocument, clauseId: string, locale: 
   const clause = document.clauses.find((item) => item.id === clauseId);
   const number = clause ? clause.index + 1 : Number(clauseId.slice(1));
   if (clause?.heading) return clause.heading;
-  return locale === "hi" ? `धारा ${number}` : `Clause ${number}`;
+  return locale === "hi" ? `खंड ${number}` : `Clause ${number}`;
 }

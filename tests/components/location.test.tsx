@@ -62,7 +62,9 @@ describe("LocationButton", () => {
     const [, pending] = screen.getAllByRole("button", { name: "Use my location" });
     await userEvent.click(pending as HTMLElement);
     expect(screen.getByText("Finding your state…")).toBeInTheDocument();
-    expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute("aria-disabled", "true");
+    await userEvent.click(pending as HTMLElement);
+    expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
   });
 });
 

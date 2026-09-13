@@ -31,7 +31,7 @@ describe("Dropzone", () => {
     );
     const input = screen.getByLabelText("Or upload") as HTMLInputElement;
     const click = vi.spyOn(input, "click");
-    await userEvent.click(screen.getByRole("button", { name: "Choose a file" }));
+    await userEvent.click(screen.getByText("Choose a file"));
     expect(click).toHaveBeenCalled();
     expect(screen.getByText("or drop it here")).toBeInTheDocument();
     await userEvent.upload(input, file);

@@ -13,7 +13,7 @@ explaining it is, so this is a requirement of the product, not a feature.
 | 1.4.1 Use of colour                               | Severity, change type and diff markers are also words or `+`/`-` text                                                                     | `risk-list.tsx`, `diff-view.tsx`              |
 | 1.4.3 Contrast                                    | All token pairs meet 4.5:1 in light and dark schemes                                                                                      | `app/globals.css`                             |
 | 1.4.4 Resize text / 1.4.10 Reflow                 | Relative units, flex/grid wrapping, no horizontal scroll at 320px or 200% zoom                                                            | layout classes throughout                     |
-| 1.4.11 Non-text contrast                          | Borders and focus ring at ≥3:1                                                                                                            | `app/globals.css`                             |
+| 1.4.11 Non-text contrast                          | Form-control borders use a dedicated token at ≥3:1 on both surfaces; card borders are decorative; focus ring ≥3:1                         | `app/globals.css`                             |
 | 1.4.12 Text spacing                               | No fixed heights on text containers                                                                                                       | components                                    |
 | 2.1.1 Keyboard                                    | Every control is native and reachable; citation links, date inputs, checkboxes, selects                                                   | all components                                |
 | 2.4.1 Bypass blocks                               | Skip link is the first tab stop                                                                                                           | `components/skip-link.tsx`                    |
@@ -41,7 +41,8 @@ explaining it is, so this is a requirement of the product, not a feature.
 
 ## Known limitations
 
-- Scanned PDFs cannot be read; the app asks for pasted text instead.
+- Scans and photos are transcribed by the model and labelled as such; the
+  transcription should be checked against the original.
 - Statute text opens on IndiaCode, whose accessibility is outside our control.
-- The Q&A stream announces the full reply as it grows; very long answers can be
-  verbose for screen-reader users. The answer length is capped server-side.
+- The Q&A answer is not read out as it streams; a short "Answer ready" status
+  is announced when it completes, and the answer is then read in place.
