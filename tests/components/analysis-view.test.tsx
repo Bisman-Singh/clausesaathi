@@ -5,7 +5,8 @@ import { axe } from "vitest-axe";
 import { describe, expect, it, vi } from "vitest";
 import { AnalysisView } from "@/components/analyze/analysis-view";
 import { Timeline } from "@/components/analyze/timeline";
-import { resetLocaleStore, writeLocale } from "@/components/locale-provider";
+import { renderToString } from "react-dom/server";
+import { LocaleProvider, resetLocaleStore, writeLocale } from "@/components/locale-provider";
 import { FIXTURE_DOCUMENT, FIXTURE_RESULT, renderWithLocale } from "@/tests/components/helpers";
 
 vi.mock("@ai-sdk/react", () => ({
@@ -57,6 +58,14 @@ describe("AnalysisView", () => {
     );
     expect(screen.getByText("High")).toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("renders a placeholder for the Q&A panel on the server and loads it only in the browser", async () => {
+    const html = renderToString(<LocaleProvider>{view}</LocaleProvider>);
+    expect(html).toContain("skeleton");
+    expect(html).not.toContain("Your question");
+    renderWithLocale(view);
+    expect(await screen.findByLabelText("Your question")).toBeInTheDocument();
   });
 
   it("hides the dropped-citation note and empty sections when there is nothing to show", () => {

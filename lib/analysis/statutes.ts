@@ -17,6 +17,8 @@ export interface StatuteOptions {
   state: IndianState | null;
   /** Act-title words for the kind of document, from `domainHints`; keeps hits on topic. */
   hints?: string[];
+  /** A central act to name in a last search when state-specific searches find nothing. */
+  centralAct?: string | null;
   maxLookups?: number;
 }
 
@@ -45,7 +47,7 @@ export async function attachStatutes(
     risks.map(async (risk, index) => {
       if (!chosen.has(index)) return { ...risk, statute: null };
       const query = (risk.statuteQuery as string).trim();
-      return { ...risk, statute: await lookup(client, query, options.state, hints) };
+      return { ...risk, statute: await lookup(client, query, options, hints) };
     }),
   );
 }
@@ -53,35 +55,39 @@ export async function attachStatutes(
 /**
  * The state-qualified query first, so the user's own act can surface. When
  * that search already yields a usable hit, own-state or central, it is taken;
- * only an empty result falls back to the plain query.
+ * an empty result falls back to the plain query, and if that only finds other
+ * states' acts, one last search names the domain's central act outright.
  */
 async function searchWithPreference(
   client: IndiaCodeClient,
   query: string,
-  state: IndianState | null,
+  options: StatuteOptions,
   hints: string[],
 ) {
-  if (state) {
-    const first = pickForJurisdiction(
-      preferRelevant(await client.search(`${query} ${state}`, HITS_PER_QUERY), hints),
+  const { state } = options;
+  const attempts = [
+    ...(state ? [`${query} ${state}`] : []),
+    query,
+    ...(options.centralAct ? [`${query} ${options.centralAct}`] : []),
+  ];
+  for (const attempt of attempts) {
+    const hit = pickForJurisdiction(
+      preferRelevant(await client.search(attempt, HITS_PER_QUERY), hints),
       state,
     );
-    if (first) return first;
+    if (hit) return hit;
   }
-  return pickForJurisdiction(
-    preferRelevant(await client.search(query, HITS_PER_QUERY), hints),
-    state,
-  );
+  return null;
 }
 
 async function lookup(
   client: IndiaCodeClient,
   query: string,
-  state: IndianState | null,
+  options: StatuteOptions,
   hints: string[],
 ): Promise<StatuteReference | null> {
   try {
-    const hit = await searchWithPreference(client, query, state, hints);
+    const hit = await searchWithPreference(client, query, options, hints);
     if (!hit) return null;
     return { act: hit.act, title: hit.title, snippet: hit.snippet, url: hit.url };
   } catch (error) {

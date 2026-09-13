@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { domainHints, preferRelevant } from "@/lib/statute/domain";
+import { centralActFor, domainHints, preferRelevant } from "@/lib/statute/domain";
 import type { StatuteHit } from "@/lib/statute/indiacode";
 
 const hit = (act: string): StatuteHit => ({ ref: act, title: act, act, snippet: "", url: "" });
@@ -14,6 +14,8 @@ describe("domainHints", () => {
 
   it("returns nothing for a type it does not recognise", () => {
     expect(domainHints("Will")).toEqual([]);
+    expect(centralActFor("Will")).toBeNull();
+    expect(centralActFor("Rental Agreement")).toBe("Transfer of Property Act");
   });
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { Suspense, lazy, useSyncExternalStore } from "react";
 import { BriefHeader } from "@/components/analyze/brief-header";
 import { Checklist } from "@/components/analyze/checklist";
 import { ClauseList } from "@/components/analyze/clause-list";
@@ -18,13 +18,36 @@ import type { ParsedDocument } from "@/lib/document/types";
 import type { TranslationKey } from "@/lib/i18n";
 
 /**
- * The Q&A panel brings the chat transport and its schema library with it,
- * so it is fetched only once there is a result to ask about.
+ * The Q&A panel brings the chat transport and its schema library with it, so
+ * it is fetched only in the browser and only once there is a result to ask
+ * about. A plain `lazy` import keeps that chunk out of the page's script list,
+ * which `next/dynamic` would add it to.
  */
-const AskPanel = dynamic(
-  () => import("@/components/analyze/ask-panel").then((module) => module.AskPanel),
-  { ssr: false, loading: () => <div aria-hidden="true" className="skeleton h-11 w-full" /> },
+const AskPanel = lazy(() =>
+  import("@/components/analyze/ask-panel").then((module) => ({ default: module.AskPanel })),
 );
+
+const noop = () => () => undefined;
+
+/** True after hydration; false during server rendering and the first client render. */
+function useIsClient(): boolean {
+  return useSyncExternalStore(
+    noop,
+    () => true,
+    () => false,
+  );
+}
+
+function AskSection(props: { documentText: string; document: ParsedDocument; state: string }) {
+  const isClient = useIsClient();
+  const placeholder = <div aria-hidden="true" className="skeleton h-11 w-full" />;
+  if (!isClient) return placeholder;
+  return (
+    <Suspense fallback={placeholder}>
+      <AskPanel {...props} />
+    </Suspense>
+  );
+}
 
 export interface AnalysisViewProps {
   document: ParsedDocument;
@@ -109,7 +132,7 @@ export function AnalysisView({
             <LegalAidPanel />
           </Section>
           <Section id="ask" title={t("sectionAsk")}>
-            <AskPanel documentText={documentText} document={document} state={state} />
+            <AskSection documentText={documentText} document={document} state={state} />
           </Section>
           <Section id="clauses" title={t("sectionClauses")}>
             <ClauseList document={document} />

@@ -14,12 +14,15 @@ interface Domain {
   pattern: RegExp;
   /** Words that appear in the titles of acts that govern this kind of document. */
   actTerms: string[];
+  /** The central act to name outright when state-specific searches find nothing. */
+  centralAct: string;
 }
 
 const DOMAINS: Domain[] = [
   {
     pattern: /rent|lease|tenan|leave and licen|landlord|premises/i,
     actTerms: ["Rent", "Tenancy", "Lease", "Transfer of Property", "Contract", "Buildings"],
+    centralAct: "Transfer of Property Act",
   },
   {
     pattern: /employ|offer|appointment|job|service agreement|internship|contractor/i,
@@ -37,6 +40,7 @@ const DOMAINS: Domain[] = [
       "Bonus",
       "Contract",
     ],
+    centralAct: "Industrial Relations Code",
   },
   {
     pattern: /consumer|member|subscription|terms|warranty|purchase|sale|service|policy|gym/i,
@@ -47,6 +51,7 @@ const DOMAINS: Domain[] = [
       "Information Technology",
       "Digital Personal Data",
     ],
+    centralAct: "Consumer Protection Act",
   },
   {
     pattern: /loan|credit|mortgage|guarantee|finance/i,
@@ -58,8 +63,14 @@ const DOMAINS: Domain[] = [
       "Negotiable Instruments",
       "Money",
     ],
+    centralAct: "Indian Contract Act",
   },
 ];
+
+/** The central act worth naming in a last search for this kind of document, if any. */
+export function centralActFor(documentType: string): string | null {
+  return DOMAINS.find((domain) => domain.pattern.test(documentType))?.centralAct ?? null;
+}
 
 /** Act-title words that fit the kind of document, or none when the type is unfamiliar. */
 export function domainHints(documentType: string): string[] {

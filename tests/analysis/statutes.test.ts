@@ -72,6 +72,24 @@ describe("attachStatutes", () => {
     expect(empty.search).toHaveBeenCalledTimes(2);
   });
 
+  it("names the domain's central act in a last search when only other states' acts come up", async () => {
+    const delhi: StatuteHit = { ...hit, act: "The Delhi Rent Control Act, 1958" };
+    const tp: StatuteHit = { ...hit, act: "The Transfer of Property Act, 1882" };
+    const client: IndiaCodeClient = {
+      search: vi.fn(async (query: string) =>
+        query.includes("Transfer of Property") ? [tp] : [delhi],
+      ),
+      getSection: vi.fn(),
+    };
+    const [risk1] = await attachStatutes([risk(1, "security deposit")], client, {
+      state: "Karnataka",
+      centralAct: "Transfer of Property Act",
+    });
+    expect(risk1?.statute?.act).toBe(tp.act);
+    expect(client.search).toHaveBeenCalledTimes(3);
+    expect(client.search).toHaveBeenLastCalledWith("security deposit Transfer of Property Act", 10);
+  });
+
   it("caps the number of lookups per analysis", async () => {
     const client: IndiaCodeClient = { search: vi.fn(async () => [hit]), getSection: vi.fn() };
     const result = await attachStatutes([risk(1, "a"), risk(2, "b"), risk(3, "c")], client, {

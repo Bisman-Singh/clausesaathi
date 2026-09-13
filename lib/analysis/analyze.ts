@@ -6,7 +6,7 @@ import { verifyCitations } from "@/lib/analysis/citations";
 import { analysisSystemPrompt, analysisUserPrompt } from "@/lib/analysis/prompts";
 import { documentBriefWireSchema, toBrief, type AnalysisResult } from "@/lib/analysis/schemas";
 import { attachStatutes } from "@/lib/analysis/statutes";
-import { domainHints } from "@/lib/statute/domain";
+import { centralActFor, domainHints } from "@/lib/statute/domain";
 import type { ParsedDocument } from "@/lib/document/types";
 import type { IndiaCodeClient } from "@/lib/statute/indiacode";
 import type { IndianState } from "@/lib/statute/jurisdiction";
@@ -56,6 +56,7 @@ export async function analyzeDocument(
   const risks = await attachStatutes(brief.risks, deps.statutes, {
     state: input.state,
     hints: domainHints(brief.documentType),
+    centralAct: centralActFor(brief.documentType),
   });
 
   return {
