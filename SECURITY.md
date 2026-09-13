@@ -50,6 +50,13 @@ quota, and the usual web application classes (XSS, clickjacking, CSRF).
 - Secrets live in environment variables; `.env*` is git-ignored and
   `.env.example` documents the names only.
 
+**Location**
+
+- Geolocation is requested only when the user presses the button, through the
+  browser's own permission prompt. The coordinates are matched to a state in
+  the browser (`lib/statute/geo.ts`) and discarded; the request carries a
+  state name at most, and the result says the state came from location.
+
 **Supply chain**
 
 - Exact dependency versions, `npm audit --audit-level=high` and CodeQL run in CI

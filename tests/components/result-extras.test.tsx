@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 import { describe, expect, it } from "vitest";
 import { AtAGlance } from "@/components/analyze/at-a-glance";
+import { BriefHeader } from "@/components/analyze/brief-header";
 import { Checklist } from "@/components/analyze/checklist";
 import { Hero } from "@/components/analyze/hero";
 import { ResultNav } from "@/components/analyze/result-nav";
@@ -65,6 +66,15 @@ describe("AtAGlance and presentSections", () => {
       checklist: [],
     }).map((section) => section.id);
     expect(empty).toEqual(["summary", "legal-aid", "ask", "clauses"]);
+  });
+});
+
+describe("BriefHeader", () => {
+  it("says when the state came from the user's location", () => {
+    renderWithLocale(
+      <BriefHeader result={FIXTURE_RESULT} jurisdiction={{ state: "Goa", basis: "location" }} />,
+    );
+    expect(screen.getByText("Goa, from your location")).toBeInTheDocument();
   });
 });
 

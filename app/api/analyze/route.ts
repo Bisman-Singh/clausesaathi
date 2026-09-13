@@ -1,7 +1,7 @@
 import { analyzeDocument } from "@/lib/analysis/analyze";
 import { segmentDocument } from "@/lib/document/segment";
 import { guardAiRequest, toHttpError } from "@/lib/http/ai-request";
-import { readAnalyzeRequest } from "@/lib/http/analyze-input";
+import { readAnalyzeRequest, type StateBasis } from "@/lib/http/analyze-input";
 import { jsonError } from "@/lib/http/guard";
 import { aiRateLimiter, serverDeps } from "@/lib/server/deps";
 import { detectState } from "@/lib/statute/detect-state";
@@ -11,15 +11,19 @@ import type { IndianState } from "@/lib/statute/jurisdiction";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-/** Which state's laws were preferred and why: the user said, the document said, or nobody did. */
+/** Which state's laws were preferred and why: the user, their location, the document, or nobody. */
 export interface Jurisdiction {
   state: IndianState | null;
-  basis: "user" | "document" | "none";
+  basis: StateBasis | "document" | "none";
 }
 
-/** The user's choice wins; otherwise the document's own city, PIN or state name. */
-export function resolveJurisdiction(chosen: IndianState | null, text: string): Jurisdiction {
-  if (chosen) return { state: chosen, basis: "user" };
+/** A state the client sent wins; otherwise the document's own city, PIN or state name. */
+export function resolveJurisdiction(
+  chosen: IndianState | null,
+  text: string,
+  basis: StateBasis = "user",
+): Jurisdiction {
+  if (chosen) return { state: chosen, basis };
   const detected = detectState(text);
   return detected ? { state: detected.state, basis: "document" } : { state: null, basis: "none" };
 }
@@ -37,7 +41,7 @@ export async function POST(request: Request): Promise<Response> {
     const deps = serverDeps();
     const input = await readAnalyzeRequest(request, deps);
     const document = segmentDocument(input.text);
-    const jurisdiction = resolveJurisdiction(input.state, input.text);
+    const jurisdiction = resolveJurisdiction(input.state, input.text, input.stateBasis);
     const result = await analyzeDocument(
       { document, situation: input.situation, locale: input.locale, state: jurisdiction.state },
       deps,

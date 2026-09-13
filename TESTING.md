@@ -15,21 +15,21 @@ Coverage is measured over the whole application: `app/`, `components/`, `lib/`,
 `proxy.ts` and `next.config.ts`. The thresholds are 100% for statements,
 branches, functions and lines, and CI fails below that. No file is excluded.
 
-| Layer                 | Tests                                                                                                                                               |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Document segmentation | headings, titles, numbered single lines, clause limit, empty input, model rendering                                                                 |
-| PDF extraction        | real PDFs generated in-test (multi-page, oversized, too many pages, no text, not a PDF)                                                             |
-| Uploads               | media type detection by declared type and extension, unsupported files, scan and photo transcription through the model, empty transcription         |
-| IndiaCode client      | request shape, caching, schema tolerance, HTTP errors, section parsing, ref parsing                                                                 |
-| Jurisdiction          | state and regional detection in act titles, own-state preference, central fallback, never another state's law; state guessed from city, PIN or name |
-| AI layer              | model chain, fallback order, timeouts, error aggregation, provider construction                                                                     |
-| Analysis              | wire-to-strict conversion, bounds, deadline shapes, citation dropping, statute attachment, full pipeline through the AI SDK's mock model            |
-| Deadlines             | UTC date arithmetic, anchor mapping, resolution, ordering                                                                                           |
-| Compare               | similarity, word diff, alignment by content or shared title, one-to-one matching, long-clause fallback                                              |
-| HTTP guards           | origin checks, size caps, JSON validation, error serialisation, rate limiting                                                                       |
-| API routes            | text and multipart analysis, PDF error codes, validation, cross-site refusal, AI outage, compare, streaming ask with tool execution                 |
-| Components            | every component and page, with axe on the form, results, diff, chrome and content pages; keyboard interaction through Testing Library user-event    |
-| Proxy and config      | nonce CSP, dev vs prod policy, matcher, static headers                                                                                              |
+| Layer                 | Tests                                                                                                                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document segmentation | headings, titles, numbered single lines, clause limit, empty input, model rendering                                                                                                                               |
+| PDF extraction        | real PDFs generated in-test (multi-page, oversized, too many pages, no text, not a PDF)                                                                                                                           |
+| Uploads               | media type detection by declared type and extension, unsupported files, scan and photo transcription through the model, empty transcription                                                                       |
+| IndiaCode client      | request shape, caching, schema tolerance, HTTP errors, section parsing, ref parsing                                                                                                                               |
+| Jurisdiction          | state and regional detection in act titles, own-state preference, central fallback, never another state's law; state guessed from city, PIN or name; position to state on the device; act family by document type |
+| AI layer              | model chain, fallback order, timeouts, error aggregation, provider construction                                                                                                                                   |
+| Analysis              | wire-to-strict conversion, bounds, deadline shapes, citation dropping, statute attachment, full pipeline through the AI SDK's mock model                                                                          |
+| Deadlines             | UTC date arithmetic, anchor mapping, resolution, ordering                                                                                                                                                         |
+| Compare               | similarity, word diff, alignment by content or shared title, one-to-one matching, long-clause fallback                                                                                                            |
+| HTTP guards           | origin checks, size caps, JSON validation, error serialisation, rate limiting                                                                                                                                     |
+| API routes            | text and multipart analysis, PDF error codes, validation, cross-site refusal, AI outage, compare, streaming ask with tool execution                                                                               |
+| Components            | every component and page, with axe on the form, results, diff, chrome and content pages; keyboard interaction through Testing Library user-event                                                                  |
+| Proxy and config      | nonce CSP, dev vs prod policy, matcher, static headers                                                                                                                                                            |
 
 ## Principles
 

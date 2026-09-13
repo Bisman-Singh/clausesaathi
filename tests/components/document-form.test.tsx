@@ -55,6 +55,7 @@ describe("DocumentForm", () => {
       file: null,
       situation: "tenant",
       state: "Karnataka",
+      stateBasis: "user",
     });
     expect(screen.getByRole("group", { name: "Or try a sample" })).toBeInTheDocument();
   });

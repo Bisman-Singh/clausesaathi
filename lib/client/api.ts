@@ -3,7 +3,7 @@ import type { ClauseChange, ClauseChangeKind } from "@/lib/compare/diff";
 import type { ChangeExplanation } from "@/lib/compare/explain";
 import type { ParsedDocument } from "@/lib/document/types";
 import type { Jurisdiction } from "@/app/api/analyze/route";
-import type { DocumentSource } from "@/lib/http/analyze-input";
+import type { DocumentSource, StateBasis } from "@/lib/http/analyze-input";
 import type { TranslationKey } from "@/lib/i18n";
 
 /**
@@ -69,6 +69,8 @@ export interface AnalyzeParams {
   situation: string;
   locale: string;
   state: string;
+  /** How `state` was arrived at; only meaningful when `state` is set. */
+  stateBasis: StateBasis;
 }
 
 export async function analyze(params: AnalyzeParams): Promise<AnalyzeResponse> {
@@ -78,6 +80,7 @@ export async function analyze(params: AnalyzeParams): Promise<AnalyzeResponse> {
     form.append("situation", params.situation);
     form.append("locale", params.locale);
     form.append("state", params.state);
+    form.append("stateBasis", params.stateBasis);
     return parseResponse(await fetch("/api/analyze", { method: "POST", body: form }));
   }
   return parseResponse(
@@ -89,6 +92,7 @@ export async function analyze(params: AnalyzeParams): Promise<AnalyzeResponse> {
         situation: params.situation,
         locale: params.locale,
         state: params.state,
+        stateBasis: params.stateBasis,
       }),
     }),
   );

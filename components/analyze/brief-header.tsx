@@ -5,6 +5,14 @@ import { useT } from "@/components/locale-provider";
 import { Card } from "@/components/ui/card";
 import type { Jurisdiction } from "@/app/api/analyze/route";
 import type { AnalysisResult } from "@/lib/analysis/schemas";
+import type { TranslationKey } from "@/lib/i18n";
+
+const LAWS_KEY: Record<Jurisdiction["basis"], TranslationKey> = {
+  user: "resultLawsUser",
+  location: "resultLawsLocation",
+  document: "resultLawsDocument",
+  none: "resultLawsNone",
+};
 
 export interface BriefHeaderProps {
   result: AnalysisResult;
@@ -16,9 +24,7 @@ export function BriefHeader({ result, jurisdiction }: BriefHeaderProps) {
   const t = useT();
   const { brief } = result;
   const laws = jurisdiction.state
-    ? t(jurisdiction.basis === "user" ? "resultLawsUser" : "resultLawsDocument", {
-        state: jurisdiction.state,
-      })
+    ? t(LAWS_KEY[jurisdiction.basis], { state: jurisdiction.state })
     : t("resultLawsNone");
 
   return (

@@ -11,12 +11,15 @@ import { UPLOAD_ACCEPT, uploadMediaType } from "@/lib/document/upload";
 import type { TranslationKey } from "@/lib/i18n";
 import type { SampleDocument } from "@/lib/samples";
 import { detectState } from "@/lib/statute/detect-state";
+import type { IndianState } from "@/lib/statute/jurisdiction";
+import type { StateSource } from "@/components/analyze/context-fields";
 
 export interface DocumentFormValues {
   text: string;
   file: File | null;
   situation: string;
   state: string;
+  stateBasis: "user" | "location";
 }
 
 export interface DocumentFormProps {
@@ -45,12 +48,15 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [situation, setSituation] = useState("");
   const [chosenState, setChosenState] = useState<string | null>(null);
+  const [locatedState, setLocatedState] = useState<IndianState | null>(null);
   const [errorKey, setErrorKey] = useState<TranslationKey | null>(null);
-  // The document's own city or PIN prefills the state until the user picks one.
-  // Only a state the user actually chose is sent; the server makes the same
-  // guess itself and then says so in the result.
+  // A state the user picked always wins, so a document about someone else's
+  // flat in another state works. Otherwise the user's own location (only after
+  // they asked for it), otherwise the document's own city or PIN as a guess
+  // that is never sent: the server makes the same guess and says so.
   const detected = useMemo(() => detectState(text), [text]);
-  const state = chosenState ?? detected?.state ?? "";
+  const state = chosenState ?? locatedState ?? detected?.state ?? "";
+  const source = stateSourceFor(chosenState, locatedState, detected?.evidence ?? null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,9 +64,10 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
     const problem = validateInput(trimmed, file);
     setErrorKey(problem);
     if (!problem) {
-      onSubmit({ text: trimmed, file, situation: situation.trim(), state: chosenState ?? "" });
+      onSubmit({ text: trimmed, file, situation: situation.trim(), ...sentState });
     }
   }
+  const sentState = sentStateFor(chosenState, locatedState);
 
   function chooseSample(sample: SampleDocument) {
     setText(sample.text);
@@ -106,7 +113,8 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
           onSituationChange={setSituation}
           state={state}
           onStateChange={setChosenState}
-          detectedFrom={chosenState === null && detected ? detected.evidence : null}
+          onLocate={setLocatedState}
+          stateSource={source}
         />
         <div className="mt-auto">
           <Button type="submit" disabled={busy} className="w-full">
@@ -116,6 +124,28 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
       </div>
     </form>
   );
+}
+
+/** What goes to the server: a chosen or located state with how it was arrived at, never the document guess. */
+export function sentStateFor(
+  chosen: string | null,
+  located: IndianState | null,
+): Pick<DocumentFormValues, "state" | "stateBasis"> {
+  if (chosen !== null) return { state: chosen, stateBasis: "user" };
+  if (located) return { state: located, stateBasis: "location" };
+  return { state: "", stateBasis: "user" };
+}
+
+/** Which of the three possible origins the state select's value currently has. */
+export function stateSourceFor(
+  chosen: string | null,
+  located: IndianState | null,
+  evidence: string | null,
+): StateSource {
+  if (chosen !== null) return { kind: "user" };
+  if (located) return { kind: "location" };
+  if (evidence) return { kind: "document", evidence };
+  return { kind: "none" };
 }
 
 /** The PDF or photo input, styled as a drop zone but still a plain file control. */

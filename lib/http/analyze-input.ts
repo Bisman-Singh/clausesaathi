@@ -16,11 +16,15 @@ import { isIndianState, type IndianState } from "@/lib/statute/jurisdiction";
 /** Pasted, read from a PDF's text layer, or transcribed by the model from a scan or photo. */
 export type DocumentSource = "text" | "pdf" | "transcription";
 
+/** How the client arrived at the state it sent: the user picked it, or the browser's location did. */
+export type StateBasis = "user" | "location";
+
 export interface AnalyzeRequest {
   text: string;
   situation: string;
   locale: Locale;
   state: IndianState | null;
+  stateBasis: StateBasis;
   source: DocumentSource;
 }
 
@@ -29,6 +33,7 @@ const jsonSchema = z.object({
   situation: z.string().max(LIMITS.MAX_SITUATION_CHARS).default(""),
   locale: z.string().optional(),
   state: z.string().optional(),
+  stateBasis: z.string().optional(),
 });
 
 /** JSON bodies may carry the whole document plus a little metadata. */
@@ -49,6 +54,7 @@ export async function readAnalyzeRequest(
     situation: raw.situation.trim().slice(0, LIMITS.MAX_SITUATION_CHARS),
     locale: toLocale(raw.locale),
     state: raw.state && isIndianState(raw.state) ? raw.state : null,
+    stateBasis: raw.stateBasis === "location" ? "location" : "user",
     source: raw.source,
   };
 }
@@ -58,6 +64,7 @@ interface RawInput {
   situation: string;
   locale: string | undefined;
   state: string | undefined;
+  stateBasis: string | undefined;
   source: DocumentSource;
 }
 
@@ -77,6 +84,7 @@ async function readMultipart(request: Request, deps: TranscribeDeps): Promise<Ra
     situation: stringField(form, "situation"),
     locale: stringField(form, "locale"),
     state: stringField(form, "state"),
+    stateBasis: stringField(form, "stateBasis"),
   };
 }
 

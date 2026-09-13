@@ -1,4 +1,5 @@
 import type { Risk, RiskWithStatute, StatuteReference } from "@/lib/analysis/schemas";
+import { preferRelevant } from "@/lib/statute/domain";
 import type { IndiaCodeClient } from "@/lib/statute/indiacode";
 import { isCentralAct, pickForJurisdiction, type IndianState } from "@/lib/statute/jurisdiction";
 import { LIMITS } from "@/lib/constants";
@@ -17,6 +18,8 @@ export async function attachStatutes(
   client: IndiaCodeClient,
   state: IndianState | null,
   maxLookups: number = LIMITS.MAX_STATUTE_LOOKUPS,
+  /** Act-title words for the kind of document, from `domainHints`; keeps hits on topic. */
+  hints: string[] = [],
 ): Promise<RiskWithStatute[]> {
   let budget = maxLookups;
   return Promise.all(
@@ -24,7 +27,7 @@ export async function attachStatutes(
       const query = risk.statuteQuery?.trim();
       if (!query || budget <= 0) return { ...risk, statute: null };
       budget -= 1;
-      return { ...risk, statute: await lookup(client, query, state) };
+      return { ...risk, statute: await lookup(client, query, state, hints) };
     }),
   );
 }
@@ -34,24 +37,29 @@ async function searchWithPreference(
   client: IndiaCodeClient,
   query: string,
   state: IndianState | null,
+  hints: string[],
 ) {
   if (state) {
     const own = pickForJurisdiction(
-      await client.search(`${query} ${state}`, HITS_PER_QUERY),
+      preferRelevant(await client.search(`${query} ${state}`, HITS_PER_QUERY), hints),
       state,
     );
     if (own && !isCentralAct(own.act)) return own;
   }
-  return pickForJurisdiction(await client.search(query, HITS_PER_QUERY), state);
+  return pickForJurisdiction(
+    preferRelevant(await client.search(query, HITS_PER_QUERY), hints),
+    state,
+  );
 }
 
 async function lookup(
   client: IndiaCodeClient,
   query: string,
   state: IndianState | null,
+  hints: string[],
 ): Promise<StatuteReference | null> {
   try {
-    const hit = await searchWithPreference(client, query, state);
+    const hit = await searchWithPreference(client, query, state, hints);
     if (!hit) return null;
     return { act: hit.act, title: hit.title, snippet: hit.snippet, url: hit.url };
   } catch (error) {

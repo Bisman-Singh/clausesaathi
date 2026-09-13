@@ -93,6 +93,20 @@ describe("POST /api/analyze", () => {
       basis: "document",
     });
     expect(resolveJurisdiction(null, "No place named.")).toEqual({ state: null, basis: "none" });
+    expect(resolveJurisdiction("Goa", "x", "location")).toEqual({
+      state: "Goa",
+      basis: "location",
+    });
+  });
+
+  it("reports a state that came from the browser's location as such", async () => {
+    setServerDeps(fakeDeps(vi.fn(async () => ({ output: brief }))));
+    const response = await POST(
+      jsonPost("/api/analyze", { text: SAMPLE_TEXT, state: "Goa", stateBasis: "location" }),
+    );
+    await expect(response.json()).resolves.toMatchObject({
+      jurisdiction: { state: "Goa", basis: "location" },
+    });
   });
 
   it("uses the document's own city for statute lookups when no state is sent", async () => {

@@ -35,6 +35,17 @@ ClauseSaathi is built around one rule: **nothing on screen is unverifiable**.
 | Summaries, checklists, actionable output | A checklist of documents and facts to gather, and a self-check for free legal aid under Section 12 of the LSA Act 1987         |
 | Prepare for a legal professional         | Document-specific questions to ask a lawyer                                                                                    |
 
+Scans and phone photos work too: a PDF with no text layer, or a JPG, PNG or
+WebP, is transcribed by the model and the result is labelled so the reader
+checks names, amounts and dates against the original.
+
+Which state's law applies is never assumed. The user picks a state, or presses
+"Use my location" (a browser permission prompt, only on request; the position
+is matched to a state on the device and never sent anywhere), or leaves it and
+the document's own city, PIN code or state name is used as a labelled guess. A
+manual choice always wins, so a document about a relative's flat in another
+state gets that state's law.
+
 Try it with the built-in synthetic samples: a rent agreement (two versions for
 compare mode), an employment offer, gym membership terms and a legal notice.
 
@@ -54,7 +65,8 @@ compare mode), an employment offer, gym membership terms and a legal notice.
   (`lib/analysis/citations.ts`).
 - **The model never writes the law.** When a risk touches Indian legislation the
   app queries the IndiaCode open API and shows the section it returns, with a
-  link, preferring the user's own state's act over another state's
+  link, preferring the user's own state's act over another state's and keeping
+  hits inside the family of acts that fits the document type
   (`lib/statute/`). If nothing is found, no law is shown.
 - **Deadlines are arithmetic, not generation.** The model reports what a clause
   says ("30 days from the notice date"); dates are computed from anchors the user
@@ -73,7 +85,7 @@ compare mode), an employment offer, gym membership terms and a legal notice.
 | **Code quality**                | Strict TypeScript (`noUncheckedIndexedAccess`), ESLint with complexity ≤10, ≤80 lines per function, no `any`, no non-null assertions; small single-purpose modules with doc comments; Prettier-formatted | `tsconfig.json`, `eslint.config.mjs`, `ARCHITECTURE.md`                   |
 | **Security**                    | Nonce-based CSP with `strict-dynamic` and no `unsafe-inline`, HSTS and the other hardening headers, same-origin checks, body size caps, schema validation, rate limiting, no stored user data            | `SECURITY.md`, `proxy.ts`, `next.config.ts`, `lib/http/`                  |
 | **Efficiency**                  | No database; one model call per analysis with output caps; LRU-cached statute lookups; provider fallback with per-call timeouts; deterministic work (segmentation, diff, dates) done without a model     | `lib/cache/`, `lib/ai/client.ts`, `lib/compare/diff.ts`                   |
-| **Testing**                     | 198 tests, **100% statements, branches, functions and lines across the whole repository** (routes, components, library, proxy), enforced in CI; opt-in live test against real Gemini and IndiaCode       | `TESTING.md`, `tests/`, `vitest.config.mts`                               |
+| **Testing**                     | 218 tests, **100% statements, branches, functions and lines across the whole repository** (routes, components, library, proxy), enforced in CI; opt-in live test against real Gemini and IndiaCode       | `TESTING.md`, `tests/`, `vitest.config.mts`                               |
 | **Accessibility**               | WCAG 2.2 AA: keyboard-only flows, skip link, labelled controls with announced errors, live regions, focus management, 4.5:1 contrast in both schemes, reduced motion, `lang` switching, axe tests        | `ACCESSIBILITY.md`, `app/globals.css`, `components/`, `tests/components/` |
 
 ## Getting started
@@ -129,7 +141,10 @@ See `ARCHITECTURE.md` for the request flow and the reasoning behind the design.
 Documents are processed in memory for one request and never written to disk or
 a database. The last result stays in the browser's session storage until the
 tab closes. The only third parties that see document text are the model
-provider and, for short search phrases only, IndiaCode.
+provider and, for short search phrases only, IndiaCode. Location is read only
+when the user presses the button and accepts the browser prompt, and the
+coordinates are turned into a state inside the browser; the server sees the
+state name at most, never a position.
 
 ## License
 

@@ -10,19 +10,26 @@ describe("api client", () => {
   it("posts JSON for text and multipart for files, and parses the body", async () => {
     const fetchMock = vi.fn(async () => Response.json({ ok: true }));
     vi.stubGlobal("fetch", fetchMock);
-    await analyze({ text: "t", situation: "s", locale: "en", state: "" });
+    await analyze({ text: "t", situation: "s", locale: "en", state: "", stateBasis: "user" });
     const [, jsonInit] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(JSON.parse(jsonInit.body as string)).toEqual({
       text: "t",
       situation: "s",
       locale: "en",
       state: "",
+      stateBasis: "user",
     });
-    await analyze({ file: new File(["x"], "a.pdf"), situation: "", locale: "hi", state: "Goa" });
+    await analyze({
+      file: new File(["x"], "a.pdf"),
+      situation: "",
+      locale: "hi",
+      state: "Goa",
+      stateBasis: "user",
+    });
     const [, formInit] = fetchMock.mock.calls[1] as unknown as [string, RequestInit];
     expect(formInit.body).toBeInstanceOf(FormData);
     expect((formInit.body as FormData).get("state")).toBe("Goa");
-    await analyze({ situation: "", locale: "en", state: "" });
+    await analyze({ situation: "", locale: "en", state: "", stateBasis: "user" });
     const [, emptyInit] = fetchMock.mock.calls[2] as unknown as [string, RequestInit];
     expect(JSON.parse(emptyInit.body as string).text).toBe("");
     await expect(compare("a", "b", "en")).resolves.toEqual({ ok: true });
@@ -30,9 +37,13 @@ describe("api client", () => {
 
   it("turns error responses into ApiError, even without a JSON body", async () => {
     vi.stubGlobal("fetch", async () => new Response("nope", { status: 500 }));
-    const error = await analyze({ text: "t", situation: "", locale: "en", state: "" }).catch(
-      (e) => e,
-    );
+    const error = await analyze({
+      text: "t",
+      situation: "",
+      locale: "en",
+      state: "",
+      stateBasis: "user",
+    }).catch((e) => e);
     expect(error).toBeInstanceOf(ApiError);
     expect(error.code).toBe("unknown");
     expect(error.status).toBe(500);

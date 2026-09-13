@@ -48,9 +48,15 @@ search phrase. The app searches IndiaCode, prefers the user's state's act, falls
 back to a central act, and never shows another state's law by accident. When
 the user picks no state, the document's own city, PIN code or state name is
 used as a guess (`lib/statute/detect-state.ts`); the guess is shown with its
-evidence in the form and in the result, never applied silently. Nothing is
-inferred from the visitor's IP or browser. The
-displayed text and link are the API's.
+evidence in the form and in the result, never applied silently. Location is
+opt-in: a button asks the browser for the position, `lib/statute/geo.ts`
+matches it to the nearest of several anchor points per state on the device,
+and only the state name is sent. A state the user picks by hand outranks both,
+so the app works for a document about somewhere else. Nothing is inferred
+from the visitor's IP. Hits are also filtered to the family of acts that fits
+the document type (`lib/statute/domain.ts`), so "security deposit" in a rent
+agreement finds a Rent Act rather than a deposit-schemes act. The displayed
+text and link are the API's.
 
 **A fallback chain instead of one model.** Each Gemini model has its own
 free-tier quota pool, so a 429 on one is not an outage. Every attempt has its
