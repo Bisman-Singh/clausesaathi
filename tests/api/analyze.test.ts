@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { POST } from "@/app/api/analyze/route";
+import { POST, resolveJurisdiction } from "@/app/api/analyze/route";
 import type { DocumentBriefWire } from "@/lib/analysis/schemas";
 import { LIMITS } from "@/lib/constants";
 import { aiRateLimiter, setServerDeps } from "@/lib/server/deps";
@@ -81,6 +81,30 @@ describe("POST /api/analyze", () => {
     const body = await response.json();
     expect(body.document.clauses.length).toBeGreaterThan(0);
     expect(body.source).toBe("pdf");
+  });
+
+  it("prefers the user's state, then the document's, then none", async () => {
+    expect(resolveJurisdiction("Kerala", "Flat in Bengaluru 560001")).toEqual({
+      state: "Kerala",
+      basis: "user",
+    });
+    expect(resolveJurisdiction(null, "Flat in Bengaluru 560001")).toEqual({
+      state: "Karnataka",
+      basis: "document",
+    });
+    expect(resolveJurisdiction(null, "No place named.")).toEqual({ state: null, basis: "none" });
+  });
+
+  it("uses the document's own city for statute lookups when no state is sent", async () => {
+    const generate = vi.fn(async () => ({ output: brief }));
+    setServerDeps(fakeDeps(generate));
+    const response = await POST(
+      jsonPost("/api/analyze", { text: `${SAMPLE_TEXT}\n\nThe flat is at Sample Road, Pune.` }),
+    );
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      jurisdiction: { state: "Maharashtra", basis: "document" },
+    });
   });
 
   it("transcribes a PDF with no text layer and says so", async () => {

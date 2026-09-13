@@ -67,7 +67,8 @@ export function AnalyzeWorkspace() {
     try {
       const response = await analyze({ ...values, locale });
       const documentText = values.file ? textFromClauses(response) : values.text;
-      writeAnalysis({ response, documentText, state: values.state } satisfies StoredAnalysis);
+      const state = response.jurisdiction.state ?? "";
+      writeAnalysis({ response, documentText, state } satisfies StoredAnalysis);
     } catch (error) {
       setErrorKey(errorKeyFor(error));
     } finally {
@@ -99,6 +100,7 @@ export function AnalyzeWorkspace() {
           <AnalysisView
             document={analysis.response.document}
             result={analysis.response.result}
+            jurisdiction={analysis.response.jurisdiction}
             documentText={analysis.documentText}
             state={analysis.state}
             today={todayIso()}

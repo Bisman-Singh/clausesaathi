@@ -81,6 +81,25 @@ describe("DocumentForm", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Please paste some text");
   });
 
+  it("guesses the state from the document until the user picks one", async () => {
+    const onSubmit = vi.fn();
+    renderWithLocale(<DocumentForm busy={false} onSubmit={onSubmit} />);
+    const select = screen.getByLabelText("Your state (optional)") as HTMLSelectElement;
+    expect(select.value).toBe("");
+    await userEvent.selectOptions(screen.getByLabelText("Or try a sample"), "employment-offer");
+    expect(select.value).toBe("Maharashtra");
+    expect(select).toHaveAccessibleDescription(
+      "Guessed from the document (Pune). Change it if that is wrong.",
+    );
+
+    await userEvent.selectOptions(select, "Kerala");
+    expect(select).not.toHaveAccessibleDescription(/Guessed/);
+    await userEvent.selectOptions(screen.getByLabelText("Or try a sample"), "rent-agreement");
+    expect(select.value).toBe("Kerala");
+    await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ state: "Kerala" }));
+  });
+
   it("submits typed text once it is long enough", async () => {
     const onSubmit = vi.fn();
     renderWithLocale(<DocumentForm busy={false} onSubmit={onSubmit} />);

@@ -10,25 +10,34 @@ import { SimpleList } from "@/components/analyze/simple-list";
 import { Timeline } from "@/components/analyze/timeline";
 import { useT } from "@/components/locale-provider";
 import { Section } from "@/components/ui/section";
+import type { Jurisdiction } from "@/app/api/analyze/route";
 import type { AnalysisResult } from "@/lib/analysis/schemas";
 import type { ParsedDocument } from "@/lib/document/types";
 
 export interface AnalysisViewProps {
   document: ParsedDocument;
   result: AnalysisResult;
+  jurisdiction: Jurisdiction;
   documentText: string;
   state: string;
   today: string;
 }
 
 /** The full brief, section by section, every claim linked to its clause. */
-export function AnalysisView({ document, result, documentText, state, today }: AnalysisViewProps) {
+export function AnalysisView({
+  document,
+  result,
+  jurisdiction,
+  documentText,
+  state,
+  today,
+}: AnalysisViewProps) {
   const t = useT();
   const { brief } = result;
 
   return (
     <article className="flex flex-col gap-10">
-      <BriefHeader result={result} />
+      <BriefHeader result={result} jurisdiction={jurisdiction} />
 
       <Section id="summary" title={t("sectionSummary")}>
         <ul className="flex list-disc flex-col gap-2 pl-5">

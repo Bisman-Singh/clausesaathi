@@ -2,6 +2,7 @@ import type { AnalysisResult } from "@/lib/analysis/schemas";
 import type { ClauseChange, ClauseChangeKind } from "@/lib/compare/diff";
 import type { ChangeExplanation } from "@/lib/compare/explain";
 import type { ParsedDocument } from "@/lib/document/types";
+import type { Jurisdiction } from "@/app/api/analyze/route";
 import type { DocumentSource } from "@/lib/http/analyze-input";
 import type { TranslationKey } from "@/lib/i18n";
 
@@ -25,6 +26,8 @@ export interface AnalyzeResponse {
   result: AnalysisResult;
   /** Where the text came from; transcriptions get a "check the original" notice. */
   source: DocumentSource;
+  /** Which state's laws were preferred, and whether the user or the document said so. */
+  jurisdiction: Jurisdiction;
 }
 
 export interface CompareResponse {

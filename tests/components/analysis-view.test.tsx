@@ -15,6 +15,7 @@ const view = (
   <AnalysisView
     document={FIXTURE_DOCUMENT}
     result={FIXTURE_RESULT}
+    jurisdiction={{ state: "Karnataka", basis: "user" }}
     documentText="doc"
     state="Karnataka"
     today="2026-09-13"
@@ -56,6 +57,7 @@ describe("AnalysisView", () => {
     renderWithLocale(
       <AnalysisView
         document={FIXTURE_DOCUMENT}
+        jurisdiction={{ state: null, basis: "none" }}
         result={{
           ...FIXTURE_RESULT,
           droppedCitations: 0,

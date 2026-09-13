@@ -83,6 +83,7 @@ export const FIXTURE_RESPONSE: AnalyzeResponse = {
   document: FIXTURE_DOCUMENT,
   result: FIXTURE_RESULT,
   source: "text",
+  jurisdiction: { state: "Karnataka", basis: "user" },
 };
 
 /** A fetch stub that answers with the given JSON body and status. */

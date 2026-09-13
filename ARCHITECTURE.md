@@ -45,7 +45,11 @@ rejected, because a 401-character explanation is not a failed generation.
 
 **Statutes come from an API, never from the model.** The model may only emit a
 search phrase. The app searches IndiaCode, prefers the user's state's act, falls
-back to a central act, and never shows another state's law by accident. The
+back to a central act, and never shows another state's law by accident. When
+the user picks no state, the document's own city, PIN code or state name is
+used as a guess (`lib/statute/detect-state.ts`); the guess is shown with its
+evidence in the form and in the result, never applied silently. Nothing is
+inferred from the visitor's IP or browser. The
 displayed text and link are the API's.
 
 **A fallback chain instead of one model.** Each Gemini model has its own

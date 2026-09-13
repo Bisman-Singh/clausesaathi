@@ -1,12 +1,23 @@
 "use client";
 
 import { useT } from "@/components/locale-provider";
+import type { Jurisdiction } from "@/app/api/analyze/route";
 import type { AnalysisResult } from "@/lib/analysis/schemas";
 
+export interface BriefHeaderProps {
+  result: AnalysisResult;
+  jurisdiction: Jurisdiction;
+}
+
 /** Title plus the facts a reader should know before trusting the rest. */
-export function BriefHeader({ result }: { result: AnalysisResult }) {
+export function BriefHeader({ result, jurisdiction }: BriefHeaderProps) {
   const t = useT();
   const { brief } = result;
+  const laws = jurisdiction.state
+    ? t(jurisdiction.basis === "user" ? "resultLawsUser" : "resultLawsDocument", {
+        state: jurisdiction.state,
+      })
+    : t("resultLawsNone");
   return (
     <header className="flex flex-col gap-2">
       <h1 id="result-heading" tabIndex={-1} className="text-2xl font-bold">
@@ -24,6 +35,10 @@ export function BriefHeader({ result }: { result: AnalysisResult }) {
         <div>
           <dt className="inline font-medium">{t("resultModel")}: </dt>
           <dd className="inline">{result.model}</dd>
+        </div>
+        <div>
+          <dt className="inline font-medium">{t("resultLaws")}: </dt>
+          <dd className="inline">{laws}</dd>
         </div>
         {result.droppedCitations > 0 ? (
           <div>

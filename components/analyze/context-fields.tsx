@@ -11,6 +11,8 @@ export interface ContextFieldsProps {
   onSituationChange: (value: string) => void;
   state: string;
   onStateChange: (value: string) => void;
+  /** The words in the document the state was guessed from, when it was guessed. */
+  detectedFrom: string | null;
 }
 
 /** The optional context: one line about the user and their state. */
@@ -20,6 +22,7 @@ export function ContextFields({
   onSituationChange,
   state,
   onStateChange,
+  detectedFrom,
 }: ContextFieldsProps) {
   const t = useT();
   return (
@@ -42,12 +45,17 @@ export function ContextFields({
         )}
       </Field>
 
-      <Field id={`${idPrefix}-state`} label={t("formStateLabel")}>
-        {() => (
+      <Field
+        id={`${idPrefix}-state`}
+        label={t("formStateLabel")}
+        hint={detectedFrom ? t("formStateDetected", { evidence: detectedFrom }) : undefined}
+      >
+        {(describedBy) => (
           <select
             id={`${idPrefix}-state`}
             value={state}
             onChange={(event) => onStateChange(event.target.value)}
+            aria-describedby={describedBy}
             className={`${CONTROL_CLASS} min-h-11`}
           >
             <option value="">{t("formStatePlaceholder")}</option>

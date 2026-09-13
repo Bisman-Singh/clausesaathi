@@ -80,6 +80,13 @@ export function stateOfAct(actTitle: string): IndianState | null {
   return STATE_PATTERNS.find(({ pattern }) => pattern.test(actTitle))?.state ?? null;
 }
 
+/** Every state name that appears in a text, once per occurrence, with the matched words. */
+export function stateMentions(text: string): Array<{ state: IndianState; match: string }> {
+  return STATE_PATTERNS.flatMap(({ state, pattern }) =>
+    [...text.matchAll(new RegExp(pattern.source, "gi"))].map(([match]) => ({ state, match })),
+  );
+}
+
 /** Whether an act is central legislation rather than any state's or region's. */
 export function isCentralAct(actTitle: string): boolean {
   return stateOfAct(actTitle) === null && !REGIONAL_PATTERN.test(actTitle);

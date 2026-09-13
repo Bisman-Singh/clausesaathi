@@ -54,7 +54,7 @@ describe("AnalyzeWorkspace", () => {
     expect(
       JSON.parse(window.sessionStorage.getItem("clausesaathi.analysis") ?? "null"),
     ).toMatchObject({
-      state: "",
+      state: "Karnataka",
     });
     const call = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0] as [
       string,
@@ -82,8 +82,32 @@ describe("AnalyzeWorkspace", () => {
     expect(stored.documentText).toContain("1. Term");
   });
 
+  it("keeps the state the server settled on for the questions panel", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(fetchJson({ ...FIXTURE_RESPONSE, jurisdiction: { state: "Goa", basis: "document" } })),
+    );
+    renderWithLocale(<AnalyzeWorkspace />);
+    await userEvent.selectOptions(screen.getByLabelText("Or try a sample"), "legal-notice");
+    await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
+    await waitFor(() =>
+      expect(screen.getByText("Goa, guessed from the document")).toBeInTheDocument(),
+    );
+    const stored = JSON.parse(window.sessionStorage.getItem("clausesaathi.analysis") ?? "{}");
+    expect(stored.state).toBe("Goa");
+  });
+
   it("warns when the text was transcribed from a scan or photo", async () => {
-    vi.stubGlobal("fetch", vi.fn(fetchJson({ ...FIXTURE_RESPONSE, source: "transcription" })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        fetchJson({
+          ...FIXTURE_RESPONSE,
+          source: "transcription",
+          jurisdiction: { state: null, basis: "none" },
+        }),
+      ),
+    );
     renderWithLocale(<AnalyzeWorkspace />);
     const file = new File([new Uint8Array(8)], "page.jpg", { type: "image/jpeg" });
     await userEvent.upload(screen.getByLabelText("Or upload a PDF or a photo"), file);
@@ -91,6 +115,9 @@ describe("AnalyzeWorkspace", () => {
     await waitFor(() =>
       expect(screen.getByText(/transcribed from your scan or photo/)).toBeInTheDocument(),
     );
+    expect(screen.getByText("no state chosen, so only central laws")).toBeInTheDocument();
+    const stored = JSON.parse(window.sessionStorage.getItem("clausesaathi.analysis") ?? "{}");
+    expect(stored.state).toBe("");
   });
 
   it("shows a translated error when the API refuses", async () => {

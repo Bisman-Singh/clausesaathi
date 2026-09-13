@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useMemo, useState, type FormEvent } from "react";
 import { ContextFields } from "@/components/analyze/context-fields";
 import { SampleSelect } from "@/components/analyze/sample-select";
 import { useT } from "@/components/locale-provider";
@@ -10,6 +10,7 @@ import { LIMITS } from "@/lib/constants";
 import { UPLOAD_ACCEPT, uploadMediaType } from "@/lib/document/upload";
 import type { TranslationKey } from "@/lib/i18n";
 import { findSample } from "@/lib/samples";
+import { detectState } from "@/lib/statute/detect-state";
 
 export interface DocumentFormValues {
   text: string;
@@ -43,8 +44,11 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [situation, setSituation] = useState("");
-  const [state, setState] = useState("");
+  const [chosenState, setChosenState] = useState<string | null>(null);
   const [errorKey, setErrorKey] = useState<TranslationKey | null>(null);
+  // The document's own city or PIN prefills the state until the user picks one.
+  const detected = useMemo(() => detectState(text), [text]);
+  const state = chosenState ?? detected?.state ?? "";
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -103,7 +107,8 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
         situation={situation}
         onSituationChange={setSituation}
         state={state}
-        onStateChange={setState}
+        onStateChange={setChosenState}
+        detectedFrom={chosenState === null && detected ? detected.evidence : null}
       />
 
       <div>

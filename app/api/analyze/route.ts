@@ -4,17 +4,32 @@ import { guardAiRequest, toHttpError } from "@/lib/http/ai-request";
 import { readAnalyzeRequest } from "@/lib/http/analyze-input";
 import { jsonError } from "@/lib/http/guard";
 import { aiRateLimiter, serverDeps } from "@/lib/server/deps";
+import { detectState } from "@/lib/statute/detect-state";
+import type { IndianState } from "@/lib/statute/jurisdiction";
 
 /** PDF parsing needs the Node runtime; a scan is transcribed and then analysed, two model calls. */
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
+/** Which state's laws were preferred and why: the user said, the document said, or nobody did. */
+export interface Jurisdiction {
+  state: IndianState | null;
+  basis: "user" | "document" | "none";
+}
+
+/** The user's choice wins; otherwise the document's own city, PIN or state name. */
+export function resolveJurisdiction(chosen: IndianState | null, text: string): Jurisdiction {
+  if (chosen) return { state: chosen, basis: "user" };
+  const detected = detectState(text);
+  return detected ? { state: detected.state, basis: "document" } : { state: null, basis: "none" };
+}
+
 /**
  * POST /api/analyze
  *
  * Accepts pasted text (JSON) or a PDF or image (multipart), returns the
- * segmented document, its verified brief and where the text came from.
- * Nothing is stored server-side.
+ * segmented document, its verified brief, where the text came from and which
+ * state's laws were preferred. Nothing is stored server-side.
  */
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -22,11 +37,12 @@ export async function POST(request: Request): Promise<Response> {
     const deps = serverDeps();
     const input = await readAnalyzeRequest(request, deps);
     const document = segmentDocument(input.text);
+    const jurisdiction = resolveJurisdiction(input.state, input.text);
     const result = await analyzeDocument(
-      { document, situation: input.situation, locale: input.locale, state: input.state },
+      { document, situation: input.situation, locale: input.locale, state: jurisdiction.state },
       deps,
     );
-    return Response.json({ document, result, source: input.source });
+    return Response.json({ document, result, source: input.source, jurisdiction });
   } catch (error) {
     return jsonError(toHttpError(error));
   }
