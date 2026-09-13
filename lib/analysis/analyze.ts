@@ -4,7 +4,7 @@ import { withModelFallback, type ModelFactory } from "@/lib/ai/client";
 import type { ModelEnv } from "@/lib/ai/models";
 import { verifyCitations } from "@/lib/analysis/citations";
 import { analysisSystemPrompt, analysisUserPrompt } from "@/lib/analysis/prompts";
-import { documentBriefSchema, type AnalysisResult } from "@/lib/analysis/schemas";
+import { documentBriefWireSchema, toBrief, type AnalysisResult } from "@/lib/analysis/schemas";
 import { attachStatutes } from "@/lib/analysis/statutes";
 import type { ParsedDocument } from "@/lib/document/types";
 import type { IndiaCodeClient } from "@/lib/statute/indiacode";
@@ -37,14 +37,14 @@ export async function analyzeDocument(
   const { value, model } = await withModelFallback(deps.factory, deps.env, async (context) => {
     const { output } = await generate({
       model: context.model,
-      output: Output.object({ schema: documentBriefSchema }),
+      output: Output.object({ schema: documentBriefWireSchema }),
       system: analysisSystemPrompt(input.locale),
       prompt: analysisUserPrompt(input),
       maxOutputTokens: AI_MAX_OUTPUT_TOKENS,
       temperature: 0.2,
       abortSignal: context.abortSignal,
     });
-    return output;
+    return toBrief(output);
   });
 
   const validIds = new Set(input.document.clauses.map((clause) => clause.id));

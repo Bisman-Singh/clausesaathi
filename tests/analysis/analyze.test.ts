@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { LanguageModel } from "ai";
 import { analyzeDocument } from "@/lib/analysis/analyze";
 import { analysisSystemPrompt, analysisUserPrompt } from "@/lib/analysis/prompts";
-import type { DocumentBrief } from "@/lib/analysis/schemas";
+import type { DocumentBriefWire } from "@/lib/analysis/schemas";
 import { segmentDocument } from "@/lib/document/segment";
 import type { IndiaCodeClient } from "@/lib/statute/indiacode";
 
@@ -10,7 +10,7 @@ const document = segmentDocument(
   "RENT AGREEMENT\n\n1. Deposit\nThe tenant pays a deposit of three months rent.\n\n2. Notice\nThirty days notice by either side.",
 );
 
-const generated: DocumentBrief = {
+const generated: DocumentBriefWire = {
   documentType: "Rent agreement",
   parties: ["Landlord", "Tenant"],
   summary: [{ text: "Deposit is three months of rent.", clauseIds: ["c1"] }],
@@ -20,7 +20,7 @@ const generated: DocumentBrief = {
       party: "Either party",
       action: "Give notice",
       clauseId: "c2",
-      deadline: { kind: "relative", days: 30, from: "the date notice is given" },
+      deadline: { kind: "relative", days: 30, from: "the date notice is given", date: null },
     },
   ],
   risks: [

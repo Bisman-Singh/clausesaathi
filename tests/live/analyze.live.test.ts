@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { createModelFactory, envFromProcess } from "@/lib/ai/client";
 import { analyzeDocument } from "@/lib/analysis/analyze";
@@ -44,7 +45,9 @@ live("analyzeDocument against live services", () => {
       },
       { factory: createModelFactory(env), env, statutes: createIndiaCodeClient() },
     );
-    console.warn(JSON.stringify(result, null, 2));
+    if (process.env.LIVE_OUT) {
+      await writeFile(process.env.LIVE_OUT, JSON.stringify(result, null, 2));
+    }
     expect(result.brief.summary.length).toBeGreaterThan(0);
     expect(result.brief.obligations.length).toBeGreaterThan(0);
     expect(result.brief.risks.length).toBeGreaterThan(0);
