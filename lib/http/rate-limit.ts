@@ -5,8 +5,12 @@
  * single abusive client without any shared store. Documented as a known
  * limitation in SECURITY.md.
  */
+/** How many allowed hits go by between sweeps of idle keys. */
+const PRUNE_EVERY = 100;
+
 export class RateLimiter {
   private readonly hits = new Map<string, number[]>();
+  private sinceLastPrune = 0;
 
   constructor(
     private readonly limit: number,
@@ -28,13 +32,21 @@ export class RateLimiter {
     return true;
   }
 
+  /** How many addresses are being tracked right now. */
+  get size(): number {
+    return this.hits.size;
+  }
+
   /** Forget every hit. Tests use it between cases; production never needs it. */
   reset(): void {
     this.hits.clear();
   }
 
+  /** Drop keys with no live hits, every so often, so a flood does not pay for a full sweep per request. */
   private prune(cutoff: number): void {
-    if (this.hits.size < 1000) return;
+    this.sinceLastPrune += 1;
+    if (this.sinceLastPrune < PRUNE_EVERY) return;
+    this.sinceLastPrune = 0;
     for (const [key, times] of this.hits) {
       if (times.every((at) => at <= cutoff)) this.hits.delete(key);
     }

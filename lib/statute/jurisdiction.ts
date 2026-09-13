@@ -75,9 +75,24 @@ const STATE_PATTERNS = INDIAN_STATES.map((state) => ({
 
 const REGIONAL_PATTERN = new RegExp(`\\b(${REGIONAL_TERMS.join("|")})\\b`, "i");
 
-/** The state named in an act title, if any. */
+/** Historical names that still head acts in force, and the state they belong to today. */
+const OLD_NAMES: ReadonlyArray<[RegExp, IndianState]> = [
+  [/\bBombay\b/i, "Maharashtra"],
+  [/\bMadras\b/i, "Tamil Nadu"],
+  [/\b(?:Calcutta|Bengal)\b/i, "West Bengal"],
+  [/\bMysore\b/i, "Karnataka"],
+  [/\bOrissa\b/i, "Odisha"],
+  [/\bSaurashtra\b/i, "Gujarat"],
+  [/\b(?:Travancore|Cochin)\b/i, "Kerala"],
+  [/\b(?:Vindhya Pradesh|Madhya Bharat|Bhopal)\b/i, "Madhya Pradesh"],
+  [/\bHyderabad\b/i, "Telangana"],
+];
+
+/** The state named in an act title, if any, old names included. */
 export function stateOfAct(actTitle: string): IndianState | null {
-  return STATE_PATTERNS.find(({ pattern }) => pattern.test(actTitle))?.state ?? null;
+  const named = STATE_PATTERNS.find(({ pattern }) => pattern.test(actTitle))?.state;
+  if (named) return named;
+  return OLD_NAMES.find(([pattern]) => pattern.test(actTitle))?.[1] ?? null;
 }
 
 /** Every state name that appears in a text, once per occurrence, with the matched words. */

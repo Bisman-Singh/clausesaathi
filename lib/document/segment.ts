@@ -10,9 +10,16 @@ import type { Clause, ParsedDocument } from "@/lib/document/types";
  * line becomes a new clause with that heading.
  */
 
-const HEADING_PATTERN =
-  /^(?:(?:clause|section|article|para(?:graph)?|part|schedule)\s+)?(?:\d+(?:\.\d+)*|[ivxlc]+|[a-z]|\([a-z0-9]+\))[.):]?\s+(.{0,120})$/i;
-const TITLE_MAX_CHARS = 90;
+/**
+ * A clause label: "3.", "3.1", "(a)", "Clause 4", or a letter or roman numeral
+ * that is followed by a delimiter, so "Civil suits" and "I agree" stay prose.
+ */
+export const LABEL_PATTERN =
+  /^(?:(?:clause|section|article|para(?:graph)?|part|schedule)\s+)?(?:\d+(?:\.\d+)*[.):]?|\([a-z0-9]+\)|(?:[ivxlc]+|[a-z])[.):])\s+/i;
+const HEADING_PATTERN = new RegExp(`${LABEL_PATTERN.source}(.{0,120})$`, "i");
+const TITLE_MAX_CHARS = 60;
+/** A first line ending on one of these is a wrapped sentence, not a title. */
+const DANGLING_WORD = /\b(and|or|of|the|to|for|by|with|in|on|a|an|is|are|shall|will|may)$/i;
 
 /** Normalise line endings and whitespace without changing the words. */
 export function normalizeText(raw: string): string {
@@ -37,7 +44,7 @@ function isNumberedHeading(line: string): boolean {
 
 function isTitleLine(line: string, restLength: number): boolean {
   if (line.length > TITLE_MAX_CHARS || restLength === 0) return false;
-  const endsLikeSentence = /[.;,]$/.test(line);
+  const endsLikeSentence = /[.;,]$/.test(line) || DANGLING_WORD.test(line);
   const upperCase = line === line.toUpperCase() && /[A-Z]/.test(line);
   return !endsLikeSentence && (upperCase || /^[A-Z][^.]*$/.test(line));
 }

@@ -16,7 +16,11 @@ export const severitySchema = z.enum(["low", "medium", "high"]);
 export type Severity = z.infer<typeof severitySchema>;
 
 const CLAUSE_ID = /^c\d+$/;
-const clauseIdSchema = z.string().regex(CLAUSE_ID, "clause ids look like c12");
+/** "c3", "[c3]" and " C3 " all mean clause 3; anything else fails the item. */
+const clauseIdSchema = z
+  .string()
+  .transform((value) => value.replace(/[\[\]\s]/g, "").toLowerCase())
+  .refine((value) => CLAUSE_ID.test(value), "clause ids look like c12");
 
 /** A trimmed, non-empty string cut to `max` characters. */
 const bounded = (max: number) =>
@@ -26,14 +30,24 @@ const bounded = (max: number) =>
     .min(1)
     .transform((value) => value.slice(0, max));
 
-/** A list cut to its first `max` entries. */
+/** A list cut to its first `max` well-formed entries; one bad item is dropped, not the brief. */
 const boundedList = <T extends z.ZodTypeAny>(item: T, max: number) =>
-  z.array(item).transform((items) => items.slice(0, max));
+  z.array(z.unknown()).transform((items) =>
+    items
+      .flatMap((candidate) => {
+        const parsed = item.safeParse(candidate);
+        return parsed.success ? [parsed.data as z.infer<T>] : [];
+      })
+      .slice(0, max),
+  );
 
 /** Clause id lists keep only well-formed ids; existence is checked later. */
-const clauseIdList = z
-  .array(z.string())
-  .transform((ids) => ids.filter((id) => CLAUSE_ID.test(id)).slice(0, 6));
+const clauseIdList = z.array(z.string()).transform((ids) =>
+  ids
+    .map((id) => id.replace(/[\[\]\s]/g, "").toLowerCase())
+    .filter((id) => CLAUSE_ID.test(id))
+    .slice(0, 6),
+);
 
 export const deadlineSchema = z.discriminatedUnion("kind", [
   z.object({
@@ -79,7 +93,7 @@ export const inconsistencySchema = z.object({
 export const documentBriefSchema = z.object({
   documentType: bounded(80),
   parties: boundedList(bounded(80), 8),
-  summary: boundedList(summaryPointSchema, 8).pipe(z.array(summaryPointSchema).min(1)),
+  summary: boundedList(summaryPointSchema, 8).refine((items) => items.length > 0, "no summary"),
   keyTerms: boundedList(keyTermSchema, 12),
   obligations: boundedList(obligationSchema, 20),
   risks: boundedList(riskSchema, 12),

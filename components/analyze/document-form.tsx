@@ -20,7 +20,7 @@ export interface DocumentFormValues {
   file: File | null;
   situation: string;
   state: string;
-  stateBasis: "user" | "location";
+  stateBasis: "user" | "location" | "none";
 }
 
 export interface DocumentFormProps {
@@ -128,11 +128,16 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
   );
 }
 
-/** What goes to the server: a chosen or located state with how it was arrived at, never the document guess. */
+/**
+ * What goes to the server: a chosen or located state with how it was arrived
+ * at, "none" when the user cleared the select on purpose, and otherwise
+ * nothing, so the server makes the document guess itself and says so.
+ */
 export function sentStateFor(
   chosen: string | null,
   located: IndianState | null,
 ): Pick<DocumentFormValues, "state" | "stateBasis"> {
+  if (chosen === "") return { state: "", stateBasis: "none" };
   if (chosen !== null) return { state: chosen, stateBasis: "user" };
   if (located) return { state: located, stateBasis: "location" };
   return { state: "", stateBasis: "user" };

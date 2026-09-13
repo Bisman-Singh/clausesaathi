@@ -66,6 +66,16 @@ describe("segmentDocument", () => {
     expect(doc.clauses[0]).toMatchObject({ heading: "INDEMNITY" });
   });
 
+  it("does not mistake words for letter or roman labels, or wrapped sentences for titles", () => {
+    const doc = segmentDocument(
+      "Civil suits may be filed in Delhi.\n\nA tenant must pay rent on time.\n\nI agree to the terms.\n\nThe Tenant shall pay rent monthly and\nin advance by the fifth day.\n\na) The first sub-clause.",
+    );
+    expect(doc.clauses.map((clause) => clause.heading)).toEqual([null, null, null, null, "a)"]);
+    expect(doc.clauses[0]?.text).toBe("Civil suits may be filed in Delhi.");
+    expect(doc.clauses[3]?.text).toContain("The Tenant shall pay rent monthly and");
+    expect(doc.clauses[4]?.text).toBe("The first sub-clause.");
+  });
+
   it("returns an empty document for blank input", () => {
     expect(segmentDocument("   \n\n  ")).toEqual({
       title: null,

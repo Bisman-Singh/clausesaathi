@@ -72,9 +72,19 @@ describe("toBrief", () => {
     });
   });
 
-  it("rejects a brief with no summary or a malformed clause id", () => {
+  it("rejects a brief with no summary", () => {
     expect(() => toBrief({ ...wire, summary: [] })).toThrow();
-    const risk = { ...wire.risks[0], clauseId: "clause 3" } as DocumentBriefWire["risks"][number];
-    expect(() => toBrief({ ...wire, risks: [risk] })).toThrow();
+  });
+
+  it("drops one malformed item instead of failing the brief, and tidies bracketed ids", () => {
+    const bad = { ...wire.risks[0], clauseId: "clause 3" } as DocumentBriefWire["risks"][number];
+    const bracketed = {
+      ...wire.risks[0],
+      clauseId: " [C3] ",
+    } as DocumentBriefWire["risks"][number];
+    const brief = toBrief({ ...wire, risks: [bad, bracketed], parties: ["Landlord", ""] });
+    expect(brief.risks).toHaveLength(1);
+    expect(brief.risks[0]?.clauseId).toBe("c3");
+    expect(brief.parties).toEqual(["Landlord"]);
   });
 });

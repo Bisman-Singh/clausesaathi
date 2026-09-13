@@ -37,9 +37,11 @@ export function isStoredAnalysis(value: unknown): value is StoredAnalysis {
   );
 }
 
-/** Today's date as the deadline arithmetic expects it. */
+/** Today's date in the user's own time zone, as the deadline arithmetic expects it. */
 export function todayIso(now: Date = new Date()): string {
-  return now.toISOString().slice(0, 10);
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
 }
 
 /** Text to answer questions against when the document came from a PDF. */

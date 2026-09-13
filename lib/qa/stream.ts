@@ -39,7 +39,7 @@ async function probe(stream: ChunkStream): Promise<Probe | null> {
     const { value, done } = await reader.read();
     if (done) return { chunks, reader };
     if (value.type === "error") {
-      reader.releaseLock();
+      await reader.cancel();
       return null;
     }
     chunks.push(value);
@@ -60,6 +60,7 @@ export function streamWithFallback(
   start: (spec: ModelSpec) => ChunkStream,
   options: StreamFallbackOptions = {},
 ): ChunkStream {
+  let active: ReadableStreamDefaultReader<UIMessageChunk> | null = null;
   return new ReadableStream<UIMessageChunk>({
     async start(controller) {
       for (const spec of chain) {
@@ -68,6 +69,7 @@ export function streamWithFallback(
           options.onError?.(spec);
           continue;
         }
+        active = probed.reader;
         for (const chunk of probed.chunks) controller.enqueue(chunk);
         for (;;) {
           const { value, done } = await probed.reader.read();
@@ -79,6 +81,10 @@ export function streamWithFallback(
       }
       controller.enqueue(UNAVAILABLE_CHUNK);
       controller.close();
+    },
+    /** The reader left: stop the model's stream rather than draining it for nobody. */
+    async cancel(reason) {
+      await active?.cancel(reason);
     },
   });
 }

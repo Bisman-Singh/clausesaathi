@@ -3,7 +3,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "vitest-axe";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DocumentForm, stateSourceFor } from "@/components/analyze/document-form";
+import { DocumentForm, sentStateFor, stateSourceFor } from "@/components/analyze/document-form";
 import { LocationButton } from "@/components/analyze/location-button";
 import { renderWithLocale } from "@/tests/components/helpers";
 
@@ -89,6 +89,13 @@ describe("DocumentForm with location", () => {
     expect(onSubmit).toHaveBeenLastCalledWith(
       expect.objectContaining({ state: "Kerala", stateBasis: "user" }),
     );
+  });
+
+  it("sends an explicit no-state basis when the select was cleared on purpose", () => {
+    expect(sentStateFor("", "Goa")).toEqual({ state: "", stateBasis: "none" });
+    expect(sentStateFor("Kerala", "Goa")).toEqual({ state: "Kerala", stateBasis: "user" });
+    expect(sentStateFor(null, "Goa")).toEqual({ state: "Goa", stateBasis: "location" });
+    expect(sentStateFor(null, null)).toEqual({ state: "", stateBasis: "user" });
   });
 
   it("ranks the possible origins of the state value", () => {

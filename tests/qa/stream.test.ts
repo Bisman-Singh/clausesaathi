@@ -74,3 +74,33 @@ describe("streamWithFallback", () => {
     expect(out).toEqual([UNAVAILABLE_CHUNK]);
   });
 });
+
+describe("streamWithFallback cancellation", () => {
+  it("cancels the active model stream when the client stops reading", async () => {
+    const cancel = vi.fn();
+    const endless = new ReadableStream<UIMessageChunk>({
+      start(controller) {
+        controller.enqueue({ type: "start" });
+        controller.enqueue({ type: "text-delta", id: "t", delta: "Yes" });
+      },
+      cancel,
+    });
+    const stream = streamWithFallback([spec("a")], () => endless);
+    const reader = stream.getReader();
+    await reader.read();
+    await reader.cancel("client left");
+    expect(cancel).toHaveBeenCalled();
+  });
+
+  it("cancels a failed model stream instead of leaving it open", async () => {
+    const cancel = vi.fn();
+    const failing = new ReadableStream<UIMessageChunk>({
+      start(controller) {
+        controller.enqueue({ type: "error", errorText: "down" });
+      },
+      cancel,
+    });
+    await drain(streamWithFallback([spec("a")], () => failing));
+    expect(cancel).toHaveBeenCalled();
+  });
+});

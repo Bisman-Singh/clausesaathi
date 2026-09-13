@@ -33,6 +33,9 @@ describe("date arithmetic", () => {
     expect(isIsoDate("2026-09-13")).toBe(true);
     expect(isIsoDate("13-09-2026")).toBe(false);
     expect(isIsoDate("2026-13-45")).toBe(false);
+    expect(isIsoDate("2026-02-30")).toBe(false);
+    expect(isIsoDate("2026-04-31")).toBe(false);
+    expect(isIsoDate("2028-02-29")).toBe(true);
   });
 });
 

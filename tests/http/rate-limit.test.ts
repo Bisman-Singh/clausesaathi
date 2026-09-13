@@ -13,13 +13,16 @@ describe("RateLimiter", () => {
     expect(limiter.allow("a")).toBe(true);
   });
 
-  it("prunes idle keys once the table grows large", () => {
+  it("prunes idle keys on a schedule rather than on every hit", () => {
     let now = 0;
     const limiter = new RateLimiter(1, 10, () => now);
-    for (let i = 0; i < 1000; i += 1) limiter.allow(`k${i}`);
+    for (let i = 0; i < 50; i += 1) limiter.allow(`old${i}`);
     now = 100;
-    expect(limiter.allow("fresh")).toBe(true);
-    expect(limiter.allow("k1")).toBe(true);
+    for (let i = 0; i < 49; i += 1) limiter.allow(`new${i}`);
+    expect(limiter.size).toBe(99);
+    expect(limiter.allow("hundredth")).toBe(true);
+    expect(limiter.size).toBe(50);
+    expect(limiter.allow("old1")).toBe(true);
   });
 
   it("exposes the AI limit configuration", () => {

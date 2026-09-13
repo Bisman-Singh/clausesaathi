@@ -28,7 +28,7 @@ describe("attachStatutes", () => {
     const result = await attachStatutes(
       [risk(1, "penalty clause"), risk(2, null), risk(3, "  ")],
       client,
-      null,
+      { state: null },
     );
     expect(result[0]?.statute).toEqual({
       act: hit.act,
@@ -51,7 +51,7 @@ describe("attachStatutes", () => {
       search: vi.fn(async (query: string) => (query.endsWith("Kerala") ? [own] : [hit])),
       getSection: vi.fn(),
     };
-    const [first] = await attachStatutes([risk(1, "rent control")], client, "Kerala");
+    const [first] = await attachStatutes([risk(1, "rent control")], client, { state: "Kerala" });
     expect(first?.statute?.act).toBe(own.act);
     expect(client.search).toHaveBeenCalledWith("rent control Kerala", 10);
 
@@ -59,20 +59,37 @@ describe("attachStatutes", () => {
       search: vi.fn(async () => [hit]),
       getSection: vi.fn(),
     };
-    const [second] = await attachStatutes([risk(1, "penalty")], central, "Kerala");
+    const [second] = await attachStatutes([risk(1, "penalty")], central, { state: "Kerala" });
     expect(second?.statute?.act).toBe(hit.act);
-    expect(central.search).toHaveBeenCalledTimes(2);
+    expect(central.search).toHaveBeenCalledTimes(1);
+
+    const empty: IndiaCodeClient = {
+      search: vi.fn(async (query: string) => (query.endsWith("Kerala") ? [] : [hit])),
+      getSection: vi.fn(),
+    };
+    const [third] = await attachStatutes([risk(1, "penalty")], empty, { state: "Kerala" });
+    expect(third?.statute?.act).toBe(hit.act);
+    expect(empty.search).toHaveBeenCalledTimes(2);
   });
 
   it("caps the number of lookups per analysis", async () => {
     const client: IndiaCodeClient = { search: vi.fn(async () => [hit]), getSection: vi.fn() };
-    const result = await attachStatutes(
-      [risk(1, "a"), risk(2, "b"), risk(3, "c")],
-      client,
-      null,
-      2,
-    );
+    const result = await attachStatutes([risk(1, "a"), risk(2, "b"), risk(3, "c")], client, {
+      state: null,
+      maxLookups: 2,
+    });
     expect(result.map((r) => r.statute !== null)).toEqual([true, true, false]);
+  });
+
+  it("spends the budget on the most serious risks first, keeping output order", async () => {
+    const client: IndiaCodeClient = { search: vi.fn(async () => [hit]), getSection: vi.fn() };
+    const risks = [
+      { ...risk(1, "a"), severity: "low" as const },
+      { ...risk(2, "b"), severity: "high" as const },
+      { ...risk(3, "c"), severity: "medium" as const },
+    ];
+    const result = await attachStatutes(risks, client, { state: null, maxLookups: 2 });
+    expect(result.map((r) => r.statute !== null)).toEqual([false, true, true]);
   });
 
   it("tolerates empty results and failed lookups", async () => {
@@ -81,7 +98,7 @@ describe("attachStatutes", () => {
       search: vi.fn().mockResolvedValueOnce([]).mockRejectedValueOnce(new Error("down")),
       getSection: vi.fn(),
     };
-    const result = await attachStatutes([risk(1, "a"), risk(2, "b")], client, null);
+    const result = await attachStatutes([risk(1, "a"), risk(2, "b")], client, { state: null });
     expect(result.map((r) => r.statute)).toEqual([null, null]);
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();

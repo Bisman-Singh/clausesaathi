@@ -1,7 +1,7 @@
 import type { Risk, RiskWithStatute, StatuteReference } from "@/lib/analysis/schemas";
 import { preferRelevant } from "@/lib/statute/domain";
 import type { IndiaCodeClient } from "@/lib/statute/indiacode";
-import { isCentralAct, pickForJurisdiction, type IndianState } from "@/lib/statute/jurisdiction";
+import { pickForJurisdiction, type IndianState } from "@/lib/statute/jurisdiction";
 import { LIMITS } from "@/lib/constants";
 
 /** How many hits to fetch so a jurisdiction preference has something to choose from. */
@@ -13,26 +13,48 @@ const HITS_PER_QUERY = 10;
  * Lookups run in parallel, are capped per analysis, and a failed lookup simply
  * leaves the risk without a statute. The law shown is always the API's text.
  */
+export interface StatuteOptions {
+  state: IndianState | null;
+  /** Act-title words for the kind of document, from `domainHints`; keeps hits on topic. */
+  hints?: string[];
+  maxLookups?: number;
+}
+
+const SEVERITY_RANK: Record<Risk["severity"], number> = { high: 0, medium: 1, low: 2 };
+
+/** Which risks get a lookup: those with a query, highest severity first, up to the budget. */
+function chooseLookups(risks: Risk[], maxLookups: number): Set<number> {
+  return new Set(
+    risks
+      .map((risk, index) => ({ index, risk }))
+      .filter(({ risk }) => (risk.statuteQuery?.trim().length ?? 0) > 0)
+      .sort((a, b) => SEVERITY_RANK[a.risk.severity] - SEVERITY_RANK[b.risk.severity])
+      .slice(0, maxLookups)
+      .map(({ index }) => index),
+  );
+}
+
 export async function attachStatutes(
   risks: Risk[],
   client: IndiaCodeClient,
-  state: IndianState | null,
-  maxLookups: number = LIMITS.MAX_STATUTE_LOOKUPS,
-  /** Act-title words for the kind of document, from `domainHints`; keeps hits on topic. */
-  hints: string[] = [],
+  options: StatuteOptions,
 ): Promise<RiskWithStatute[]> {
-  let budget = maxLookups;
+  const chosen = chooseLookups(risks, options.maxLookups ?? LIMITS.MAX_STATUTE_LOOKUPS);
+  const hints = options.hints ?? [];
   return Promise.all(
-    risks.map(async (risk) => {
-      const query = risk.statuteQuery?.trim();
-      if (!query || budget <= 0) return { ...risk, statute: null };
-      budget -= 1;
-      return { ...risk, statute: await lookup(client, query, state, hints) };
+    risks.map(async (risk, index) => {
+      if (!chosen.has(index)) return { ...risk, statute: null };
+      const query = (risk.statuteQuery as string).trim();
+      return { ...risk, statute: await lookup(client, query, options.state, hints) };
     }),
   );
 }
 
-/** Try the state-qualified query first so the user's own act can surface. */
+/**
+ * The state-qualified query first, so the user's own act can surface. When
+ * that search already yields a usable hit, own-state or central, it is taken;
+ * only an empty result falls back to the plain query.
+ */
 async function searchWithPreference(
   client: IndiaCodeClient,
   query: string,
@@ -40,11 +62,11 @@ async function searchWithPreference(
   hints: string[],
 ) {
   if (state) {
-    const own = pickForJurisdiction(
+    const first = pickForJurisdiction(
       preferRelevant(await client.search(`${query} ${state}`, HITS_PER_QUERY), hints),
       state,
     );
-    if (own && !isCentralAct(own.act)) return own;
+    if (first) return first;
   }
   return pickForJurisdiction(
     preferRelevant(await client.search(query, HITS_PER_QUERY), hints),

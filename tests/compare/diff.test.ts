@@ -122,6 +122,17 @@ describe("diffDocuments", () => {
     expect(titleKey("   ")).toBeNull();
   });
 
+  it("reports a punctuation or case-only edit as a change, not unchanged", () => {
+    const changes = diffDocuments(
+      segmentDocument("1. Rent\nThe rent is Rs. 18,000/- per month, payable monthly."),
+      segmentDocument("1. Rent\nThe rent is Rs 18000 per month payable Monthly."),
+    );
+    expect(changes[0]?.kind).toBe("modified");
+    expect(changes[0]?.segments).toEqual(
+      expect.arrayContaining([{ type: "removed", text: "Rs. 18,000/-" }]),
+    );
+  });
+
   it("handles empty documents", () => {
     expect(diffDocuments(segmentDocument(""), segmentDocument("Only new."))).toEqual([
       expect.objectContaining({ kind: "added" }),

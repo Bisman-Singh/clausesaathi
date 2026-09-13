@@ -8,7 +8,8 @@ vi.mock("ai", async (importOriginal) => {
 });
 
 import type { UIMessageChunk } from "ai";
-import { POST, hideModelError, toModelMessages } from "@/app/api/ask/route";
+import { POST } from "@/app/api/ask/route";
+import { hideModelError, toModelMessages } from "@/lib/qa/messages";
 import { setServerDeps } from "@/lib/server/deps";
 import { fakeDeps, fakeStatutes, jsonPost, SAMPLE_TEXT } from "@/tests/api/helpers";
 
@@ -137,10 +138,17 @@ describe("POST /api/ask", () => {
 });
 
 describe("toModelMessages", () => {
-  it("keeps text parts only and caps their length", () => {
+  it("keeps text parts only, caps questions, keeps answers whole and drops empty turns", () => {
     const long = "y".repeat(1000);
     expect(
-      toModelMessages([{ role: "user", parts: [{ type: "text", text: long }, { type: "file" }] }]),
-    ).toEqual([{ role: "user", content: "y".repeat(500) }]);
+      toModelMessages([
+        { role: "user", parts: [{ type: "text", text: long }, { type: "file" }] },
+        { role: "assistant", parts: [{ type: "tool-lookupStatute" }] },
+        { role: "assistant", parts: [{ type: "text", text: long }] },
+      ]),
+    ).toEqual([
+      { role: "user", content: "y".repeat(500) },
+      { role: "assistant", content: long },
+    ]);
   });
 });

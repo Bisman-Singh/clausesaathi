@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { POST, resolveJurisdiction } from "@/app/api/analyze/route";
+import { POST } from "@/app/api/analyze/route";
+import { resolveJurisdiction } from "@/lib/statute/resolve";
 import type { DocumentBriefWire } from "@/lib/analysis/schemas";
 import { LIMITS } from "@/lib/constants";
-import { aiRateLimiter, setServerDeps } from "@/lib/server/deps";
+import { aiRateLimiter, analysisCache, setServerDeps } from "@/lib/server/deps";
 import { buildSimplePdf } from "@/tests/fixtures/pdf";
 import { SAMPLE_TEXT, fakeDeps, jsonPost } from "@/tests/api/helpers";
 
@@ -22,6 +23,7 @@ const brief: DocumentBriefWire = {
 afterEach(() => {
   setServerDeps(null);
   aiRateLimiter.reset();
+  analysisCache.clear();
 });
 
 /** A same-origin multipart upload of `bytes` under `name` with the given declared type. */
@@ -235,6 +237,19 @@ describe("POST /api/analyze", () => {
       jsonPost("/api/analyze", { text: "x".repeat(LIMITS.MAX_DOCUMENT_CHARS + 1) }),
     );
     await expect(long.json()).resolves.toMatchObject({ error: "too_long" });
+  });
+
+  it("serves a repeated document from the cache without a second model call", async () => {
+    const generate = vi.fn(async () => ({ output: brief }));
+    setServerDeps(fakeDeps(generate));
+    const body = { text: SAMPLE_TEXT, situation: "tenant", locale: "en", state: "Karnataka" };
+    const first = await POST(jsonPost("/api/analyze", body));
+    const second = await POST(jsonPost("/api/analyze", body));
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(generate).toHaveBeenCalledTimes(1);
+    await POST(jsonPost("/api/analyze", { ...body, situation: "landlord" }));
+    expect(generate).toHaveBeenCalledTimes(2);
   });
 
   it("refuses cross-site callers", async () => {

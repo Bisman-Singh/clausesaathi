@@ -1,3 +1,4 @@
+import { LABEL_PATTERN } from "@/lib/document/segment";
 import type { Clause, ParsedDocument } from "@/lib/document/types";
 
 /**
@@ -27,9 +28,6 @@ export interface ClauseChange {
 
 /** Below this the clauses are treated as different clauses, not an edit. */
 export const MATCH_THRESHOLD = 0.45;
-/** Leading numbering in a heading, so "6. Maintenance" and "5. Maintenance" share a title. */
-const HEADING_NUMBER =
-  /^(?:(?:clause|section|article|para(?:graph)?|part|schedule)\s+)?(?:\d+(?:\.\d+)*|[ivxlc]+|[a-z]|\([a-z0-9]+\))[.):]?\s+/i;
 /** At or above this a pair is considered unchanged. */
 const UNCHANGED_THRESHOLD = 0.999;
 /** Longer clauses skip the quadratic word diff and keep only the similarity. */
@@ -54,14 +52,26 @@ function bigrams(words: string[]): Map<string, number> {
 }
 
 /** Sørensen–Dice similarity over word bigrams, 1 for identical text. */
-export function similarity(a: string, b: string): number {
-  const left = bigrams(tokens(a));
-  const right = bigrams(tokens(b));
-  const total = [...left.values(), ...right.values()].reduce((sum, n) => sum + n, 0);
-  if (total === 0) return a.trim() === b.trim() ? 1 : 0;
+type Profile = { grams: Map<string, number>; size: number; text: string };
+
+/** Everything `similarity` needs from one text, computed once per clause. */
+function profile(text: string): Profile {
+  const grams = bigrams(tokens(text));
+  let size = 0;
+  for (const count of grams.values()) size += count;
+  return { grams, size, text };
+}
+
+function diceScore(left: Profile, right: Profile): number {
+  const total = left.size + right.size;
+  if (total === 0) return left.text.trim() === right.text.trim() ? 1 : 0;
   let overlap = 0;
-  for (const [key, count] of left) overlap += Math.min(count, right.get(key) ?? 0);
+  for (const [key, count] of left.grams) overlap += Math.min(count, right.grams.get(key) ?? 0);
   return (2 * overlap) / total;
+}
+
+export function similarity(a: string, b: string): number {
+  return diceScore(profile(a), profile(b));
 }
 
 /** Word-level diff using a longest-common-subsequence table. */
@@ -134,7 +144,7 @@ interface Match {
 
 /** The heading without its numbering, lower-cased; null when there is no heading. */
 export function titleKey(heading: string | null): string | null {
-  const title = heading?.replace(HEADING_NUMBER, "").trim().toLowerCase() ?? "";
+  const title = heading?.replace(LABEL_PATTERN, "").trim().toLowerCase() ?? "";
   return title.length > 0 ? title : null;
 }
 
@@ -147,9 +157,11 @@ function isCandidate(clauseA: Clause, clauseB: Clause, score: number): boolean {
 
 function bestMatches(before: Clause[], after: Clause[]): Match[] {
   const candidates: Match[] = [];
+  const afterProfiles = after.map((clause) => profile(clause.text));
   before.forEach((clauseA, beforeIndex) => {
+    const left = profile(clauseA.text);
     after.forEach((clauseB, afterIndex) => {
-      const score = similarity(clauseA.text, clauseB.text);
+      const score = diceScore(left, afterProfiles[afterIndex] as Profile);
       if (isCandidate(clauseA, clauseB, score)) candidates.push({ beforeIndex, afterIndex, score });
     });
   });
@@ -164,8 +176,13 @@ function bestMatches(before: Clause[], after: Clause[]): Match[] {
   });
 }
 
+/** Whitespace aside, the same characters: a case or punctuation edit still counts as a change. */
+function sameText(a: string, b: string): boolean {
+  return a.replace(/\s+/g, " ").trim() === b.replace(/\s+/g, " ").trim();
+}
+
 function changeFor(clauseA: Clause, clauseB: Clause, score: number): ClauseChange {
-  if (score >= UNCHANGED_THRESHOLD) {
+  if (score >= UNCHANGED_THRESHOLD && sameText(clauseA.text, clauseB.text)) {
     return {
       kind: "unchanged",
       before: clauseA,

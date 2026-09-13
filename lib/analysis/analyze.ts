@@ -53,13 +53,10 @@ export async function analyzeDocument(
 
   const validIds = new Set(input.document.clauses.map((clause) => clause.id));
   const { brief, dropped } = verifyCitations(value, validIds);
-  const risks = await attachStatutes(
-    brief.risks,
-    deps.statutes,
-    input.state,
-    undefined,
-    domainHints(brief.documentType),
-  );
+  const risks = await attachStatutes(brief.risks, deps.statutes, {
+    state: input.state,
+    hints: domainHints(brief.documentType),
+  });
 
   return {
     brief: { ...brief, risks },

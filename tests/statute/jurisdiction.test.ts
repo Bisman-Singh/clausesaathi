@@ -23,6 +23,17 @@ describe("stateOfAct and isCentralAct", () => {
     expect(stateOfAct("The Goa, Daman and Diu Buildings Act")).toBe("Goa");
   });
 
+  it("maps historical act names to today's state", () => {
+    expect(stateOfAct("The Bombay Rents, Hotel and Lodging House Rates Control Act")).toBe(
+      "Maharashtra",
+    );
+    expect(stateOfAct("The Orissa House Rent Control Act")).toBe("Odisha");
+    expect(stateOfAct("The Mysore Rent Control Act")).toBe("Karnataka");
+    expect(pickForJurisdiction([hit("The Bombay Rent Act")], "Maharashtra")?.act).toBe(
+      "The Bombay Rent Act",
+    );
+  });
+
   it("treats historical regional names as non-central", () => {
     expect(isCentralAct("The Ajmer Tenancy and Land Records Act, 1950")).toBe(false);
     expect(isCentralAct("The Bombay Rents, Hotel and Lodging House Rates Control Act")).toBe(false);

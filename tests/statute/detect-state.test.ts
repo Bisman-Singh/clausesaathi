@@ -36,6 +36,15 @@ describe("detectState", () => {
     expect(detectState("High Court of Madras")?.state).toBe("Tamil Nadu");
   });
 
+  it("does not read a rupee amount as a PIN code", () => {
+    expect(detectState("A deposit of Rs. 500000 is paid for the flat in Bengaluru.")?.state).toBe(
+      "Karnataka",
+    );
+    expect(detectState("Pay ₹250000 on signing.")).toBeNull();
+    expect(detectState("Pay 250000/- on signing.")).toBeNull();
+    expect(detectState("Pay 250000 rupees on signing.")).toBeNull();
+  });
+
   it("returns null when nothing points anywhere or two states tie", () => {
     expect(detectState("This agreement is between two parties.")).toBeNull();
     expect(detectState("Offices in Pune and Chennai.")).toBeNull();

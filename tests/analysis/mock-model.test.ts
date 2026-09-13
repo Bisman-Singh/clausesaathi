@@ -66,12 +66,21 @@ describe("real generateText through a mock model", () => {
       factory: () =>
         modelReturning({
           changes: [
-            { index: firstModified, whatChanged: "x", whoBenefits: "both", severity: "low" },
+            {
+              index: firstModified,
+              whatChanged: "x",
+              whoBenefits: "the tenant, obviously, in every respect imaginable here",
+              severity: "low",
+            },
+            { index: firstModified + 1, whatChanged: "y", whoBenefits: "  ", severity: "low" },
           ],
         }),
       env,
     });
-    expect(result.explanations).toHaveLength(1);
+    expect(result.explanations[0]?.whoBenefits).toHaveLength(40);
+    expect(result.explanations.find((item) => item.index === firstModified + 1)?.whoBenefits).toBe(
+      "unclear",
+    );
     expect(result.model).toBe("google/gemini-3.6-flash");
   });
 

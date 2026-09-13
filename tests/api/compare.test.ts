@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/compare/route";
-import { explainSystemPrompt, explainUserPrompt, modifiedPairs } from "@/lib/compare/explain";
+import {
+  MAX_EXPLAINED_PAIRS,
+  explainSystemPrompt,
+  explainUserPrompt,
+  modifiedPairs,
+} from "@/lib/compare/explain";
 import { diffDocuments } from "@/lib/compare/diff";
 import { segmentDocument } from "@/lib/document/segment";
 import { setServerDeps } from "@/lib/server/deps";
@@ -82,5 +87,22 @@ describe("POST /api/compare", () => {
       jsonPost("/api/compare", { before: " ".repeat(100), after: RENT_AGREEMENT_V2 }),
     );
     await expect(blank.json()).resolves.toMatchObject({ error: "too_short" });
+  });
+});
+
+describe("modifiedPairs cap", () => {
+  it("explains the least similar pairs first when there are more than the cap", () => {
+    const changes = Array.from({ length: MAX_EXPLAINED_PAIRS + 5 }, (_, index) => ({
+      kind: "modified" as const,
+      before: { id: `c${index}`, index, heading: null, text: `before ${index}` },
+      after: { id: `c${index}`, index, heading: null, text: `after ${index}` },
+      similarity: index / 100,
+      segments: null,
+    }));
+    const pairs = modifiedPairs(changes);
+    expect(pairs).toHaveLength(MAX_EXPLAINED_PAIRS);
+    expect(pairs.map((pair) => pair.index)).toEqual(
+      Array.from({ length: MAX_EXPLAINED_PAIRS }, (_, index) => index),
+    );
   });
 });

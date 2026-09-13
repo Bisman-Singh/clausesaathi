@@ -50,8 +50,11 @@ export function daysBetween(from: string, to: string): number {
   return Math.round(ms / 86_400_000);
 }
 
+/** A real calendar date in ISO form; "2026-02-30" fails because it does not round-trip. */
 export function isIsoDate(value: string): boolean {
-  return ISO_DATE.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+  if (!ISO_DATE.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
 export type AnchorDates = Partial<Record<AnchorKey, string>>;

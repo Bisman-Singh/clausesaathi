@@ -4,7 +4,7 @@ import { AtAGlance } from "@/components/analyze/at-a-glance";
 import { useT } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { Jurisdiction } from "@/app/api/analyze/route";
+import type { Jurisdiction } from "@/lib/statute/resolve";
 import type { AnalysisResult } from "@/lib/analysis/schemas";
 import type { TranslationKey } from "@/lib/i18n";
 

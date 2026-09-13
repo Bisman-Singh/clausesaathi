@@ -12,7 +12,7 @@ import { SimpleList } from "@/components/analyze/simple-list";
 import { Timeline } from "@/components/analyze/timeline";
 import { useT } from "@/components/locale-provider";
 import { Section } from "@/components/ui/section";
-import type { Jurisdiction } from "@/app/api/analyze/route";
+import type { Jurisdiction } from "@/lib/statute/resolve";
 import type { AnalysisResult } from "@/lib/analysis/schemas";
 import type { ParsedDocument } from "@/lib/document/types";
 import type { TranslationKey } from "@/lib/i18n";

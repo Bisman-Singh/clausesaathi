@@ -1,4 +1,5 @@
 import { createModelFactory, envFromProcess } from "@/lib/ai/client";
+import { createAnalysisCache } from "@/lib/analysis/cache";
 import type { AnalyzeDeps } from "@/lib/analysis/analyze";
 import { AI_RATE_LIMIT, RateLimiter } from "@/lib/http/rate-limit";
 import { createIndiaCodeClient } from "@/lib/statute/indiacode";
@@ -26,3 +27,6 @@ export function setServerDeps(next: AnalyzeDeps | null): void {
 }
 
 export const aiRateLimiter = new RateLimiter(AI_RATE_LIMIT.limit, AI_RATE_LIMIT.windowMs);
+
+/** Recent briefs by content hash, so repeated documents (the samples above all) cost no model call. */
+export const analysisCache = createAnalysisCache();

@@ -1,4 +1,4 @@
-import { createUIMessageStreamResponse, stepCountIs, streamText, type ModelMessage } from "ai";
+import { createUIMessageStreamResponse, stepCountIs, streamText } from "ai";
 import { z } from "zod";
 import { modelChain } from "@/lib/ai/models";
 import { AI_TIMEOUT_MS, LIMITS } from "@/lib/constants";
@@ -6,6 +6,7 @@ import { segmentDocument } from "@/lib/document/segment";
 import { guardAiRequest, toHttpError } from "@/lib/http/ai-request";
 import { HttpError, jsonError, readJson } from "@/lib/http/guard";
 import { toLocale } from "@/lib/i18n";
+import { hideModelError, toModelMessages } from "@/lib/qa/messages";
 import { qaSystemPrompt } from "@/lib/qa/prompt";
 import { streamWithFallback } from "@/lib/qa/stream";
 import { statuteTools } from "@/lib/qa/tools";
@@ -31,22 +32,6 @@ const bodySchema = z.object({
 });
 
 const MAX_BODY_BYTES = LIMITS.MAX_DOCUMENT_CHARS * 4 + LIMITS.MAX_CHAT_MESSAGES * 4096;
-
-/** Keep only the text of each turn; tool parts from earlier turns are not replayed. */
-export function toModelMessages(messages: z.infer<typeof bodySchema>["messages"]): ModelMessage[] {
-  return messages.map((message) => ({
-    role: message.role,
-    content: message.parts
-      .filter((part) => part.type === "text" && part.text)
-      .map((part) => (part.text as string).slice(0, LIMITS.MAX_QUESTION_CHARS))
-      .join("\n"),
-  }));
-}
-
-/** What the client sees in an error chunk; provider messages never leave the server. */
-export function hideModelError(): string {
-  return "model_failed";
-}
 
 /**
  * POST /api/ask
@@ -77,7 +62,8 @@ export async function POST(request: Request): Promise<Response> {
           stopWhen: stepCountIs(2),
           maxOutputTokens: 1200,
           temperature: 0.2,
-          abortSignal: AbortSignal.timeout(AI_TIMEOUT_MS),
+          // Stop generating when the reader leaves, as well as on the per-model timeout.
+          abortSignal: AbortSignal.any([request.signal, AbortSignal.timeout(AI_TIMEOUT_MS)]),
         }).toUIMessageStream({ onError: hideModelError }),
       { onError: (spec) => console.warn("ask: model failed before answering", spec.id) },
     );

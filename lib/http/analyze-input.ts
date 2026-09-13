@@ -11,6 +11,9 @@ import {
 import { HttpError, assertContentLength, readJson } from "@/lib/http/guard";
 import { toLocale } from "@/lib/i18n";
 import { isIndianState, type IndianState } from "@/lib/statute/jurisdiction";
+import type { StateBasis } from "@/lib/statute/resolve";
+
+export type { StateBasis };
 
 /**
  * Reading the analyse request in either of its two shapes: JSON with pasted
@@ -20,9 +23,6 @@ import { isIndianState, type IndianState } from "@/lib/statute/jurisdiction";
 
 /** Pasted, read from a PDF's text layer, or transcribed by the model from a scan or photo. */
 export type DocumentSource = "text" | "pdf" | "transcription";
-
-/** How the client arrived at the state it sent: the user picked it, or the browser's location did. */
-export type StateBasis = "user" | "location";
 
 export interface AnalyzeRequest {
   text: string;
@@ -59,7 +59,7 @@ export async function readAnalyzeRequest(
     situation: raw.situation.trim().slice(0, LIMITS.MAX_SITUATION_CHARS),
     locale: toLocale(raw.locale),
     state: raw.state && isIndianState(raw.state) ? raw.state : null,
-    stateBasis: raw.stateBasis === "location" ? "location" : "user",
+    stateBasis: toStateBasis(raw.stateBasis),
     source: raw.source,
   };
 }
@@ -111,6 +111,11 @@ async function readFile(
   const transcription = await transcribeFile({ bytes, mediaType }, deps);
   if (!transcription) throw new HttpError(400, "no_text_found");
   return { text: transcription.text, source: "transcription" };
+}
+
+function toStateBasis(value: string | undefined): StateBasis {
+  if (value === "location" || value === "none") return value;
+  return "user";
 }
 
 function stringField(form: FormData, name: string): string {

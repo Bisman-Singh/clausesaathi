@@ -26,6 +26,11 @@ export class LruCache<V> {
     return entry.value;
   }
 
+  /** Forget everything; tests use it between cases. */
+  clear(): void {
+    this.entries.clear();
+  }
+
   set(key: string, value: V): void {
     this.entries.delete(key);
     this.entries.set(key, { value, expiresAt: this.now() + this.ttlMs });

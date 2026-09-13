@@ -2,7 +2,7 @@ import type { AnalysisResult } from "@/lib/analysis/schemas";
 import type { ClauseChange, ClauseChangeKind } from "@/lib/compare/diff";
 import type { ChangeExplanation } from "@/lib/compare/explain";
 import type { ParsedDocument } from "@/lib/document/types";
-import type { Jurisdiction } from "@/app/api/analyze/route";
+import type { Jurisdiction } from "@/lib/statute/resolve";
 import type { DocumentSource, StateBasis } from "@/lib/http/analyze-input";
 import type { TranslationKey } from "@/lib/i18n";
 
@@ -73,7 +73,7 @@ export interface AnalyzeParams {
   situation: string;
   locale: string;
   state: string;
-  /** How `state` was arrived at; only meaningful when `state` is set. */
+  /** How `state` was arrived at; "none" means the user chose to have no state at all. */
   stateBasis: StateBasis;
 }
 

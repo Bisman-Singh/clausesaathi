@@ -169,6 +169,16 @@ const CITY_PATTERNS = Object.entries(CITIES).map(([city, state]) => ({
   pattern: new RegExp(`\\b${city.replace(/ /g, "\\s+")}\\b`, "gi"),
 }));
 const PIN_PATTERN = /\b[1-9]\d{5}\b/g;
+/** A six-digit number written as money is an amount, not a PIN code. */
+const AMOUNT_BEFORE = /(?:₹|rs\.?|inr|rupees?)\s*$/i;
+const AMOUNT_AFTER = /^\s*(?:\/-|rupees?|only)/i;
+
+function looksLikeAmount(text: string, index: number, length: number): boolean {
+  return (
+    AMOUNT_BEFORE.test(text.slice(Math.max(0, index - 12), index)) ||
+    AMOUNT_AFTER.test(text.slice(index + length, index + length + 8))
+  );
+}
 
 interface Evidence {
   state: IndianState;
@@ -187,8 +197,9 @@ function collect(text: string): Evidence[] {
     weight: WEIGHT.state,
     text: match,
   }));
-  for (const [pin] of text.matchAll(PIN_PATTERN)) {
-    const state = stateOfPin(pin);
+  for (const match of text.matchAll(PIN_PATTERN)) {
+    const [pin] = match;
+    const state = looksLikeAmount(text, match.index, pin.length) ? null : stateOfPin(pin);
     if (state) found.push({ state, weight: WEIGHT.pin, text: pin });
   }
   for (const { state, pattern } of CITY_PATTERNS) {

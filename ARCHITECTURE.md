@@ -58,6 +58,11 @@ the document type (`lib/statute/domain.ts`), so "security deposit" in a rent
 agreement finds a Rent Act rather than a deposit-schemes act. The displayed
 text and link are the API's.
 
+**Results are cached by content hash.** The same text with the same situation,
+language and state returns the same brief for an hour (`lib/analysis/cache.ts`),
+so the demo samples cost one model call a day rather than one per click. The
+key is a SHA-256 of the inputs; the cache holds results, never documents.
+
 **A fallback chain instead of one model.** Each Gemini model has its own
 free-tier quota pool, so a 429 on one is not an outage. Every attempt has its
 own timeout. Streaming Q&A tries the same chain: each model's stream is read until it

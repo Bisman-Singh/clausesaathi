@@ -34,8 +34,9 @@ describe("isStoredAnalysis and todayIso", () => {
     expect(textFromClauses(FIXTURE_RESPONSE)).toContain("1. Term\nThe tenancy");
   });
 
-  it("formats today as an ISO date", () => {
-    expect(todayIso(new Date("2026-09-13T22:30:00+05:30"))).toBe("2026-09-13");
+  it("formats today as an ISO date in the user's own calendar", () => {
+    expect(todayIso(new Date(2026, 8, 13, 23, 30))).toBe("2026-09-13");
+    expect(todayIso(new Date(2026, 0, 1, 0, 5))).toBe("2026-01-01");
   });
 });
 
