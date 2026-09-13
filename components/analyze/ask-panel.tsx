@@ -7,11 +7,15 @@ import { useLocale, useT } from "@/components/locale-provider";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CONTROL_CLASS } from "@/components/ui/field";
+import { CitedText } from "@/components/analyze/cited-text";
 import { LIMITS } from "@/lib/constants";
+import type { ParsedDocument } from "@/lib/document/types";
 
 export interface AskPanelProps {
   /** The raw document text the answers must stay inside. */
   documentText: string;
+  /** The parsed clauses, so `[c3]` in an answer becomes a link. */
+  document: ParsedDocument;
   state: string;
 }
 
@@ -20,7 +24,7 @@ function isTextPart(part: { type: string }): part is { type: "text"; text: strin
 }
 
 /** Streaming Q&A over the document, with the statute tool on the server. */
-export function AskPanel({ documentText, state }: AskPanelProps) {
+export function AskPanel({ documentText, document, state }: AskPanelProps) {
   const t = useT();
   const { locale } = useLocale();
   const id = useId();
@@ -58,7 +62,11 @@ export function AskPanel({ documentText, state }: AskPanelProps) {
             </span>
             {message.parts.filter(isTextPart).map((part, index) => (
               <p key={index} className="whitespace-pre-wrap">
-                {part.text}
+                {message.role === "user" ? (
+                  part.text
+                ) : (
+                  <CitedText text={part.text} document={document} />
+                )}
               </p>
             ))}
           </li>

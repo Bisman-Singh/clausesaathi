@@ -95,7 +95,7 @@ export function AnalysisView({ document, result, documentText, state, today }: A
       </Section>
 
       <Section id="ask" title={t("sectionAsk")}>
-        <AskPanel documentText={documentText} state={state} />
+        <AskPanel documentText={documentText} document={document} state={state} />
       </Section>
 
       <Section id="clauses" title={t("sectionClauses")}>

@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { AskPanel } from "@/components/analyze/ask-panel";
 import { LegalAidPanel } from "@/components/analyze/legal-aid-panel";
-import { renderWithLocale } from "@/tests/components/helpers";
+import { FIXTURE_DOCUMENT, renderWithLocale } from "@/tests/components/helpers";
 
 const chat = {
   messages: [] as Array<{
@@ -36,7 +36,7 @@ describe("AskPanel", () => {
   it("sends a trimmed question and clears the box", async () => {
     chat.messages = [];
     chat.status = "ready";
-    renderWithLocale(<AskPanel documentText="doc" state="" />);
+    renderWithLocale(<AskPanel documentText="doc" document={FIXTURE_DOCUMENT} state="" />);
     const box = screen.getByLabelText("Ask a question about this document");
     expect(screen.getByRole("button", { name: "Ask" })).toBeDisabled();
     await userEvent.type(box, "  Can I leave early?  ");
@@ -51,14 +51,18 @@ describe("AskPanel", () => {
       {
         id: "2",
         role: "assistant",
-        parts: [{ type: "text", text: "A." }, { type: "tool-lookupStatute" }],
+        parts: [{ type: "text", text: "A. See [c2] and [c99]." }, { type: "tool-lookupStatute" }],
       },
     ];
     chat.status = "streaming";
     chat.error = new Error("boom");
-    renderWithLocale(<AskPanel documentText="doc" state="Kerala" />);
+    renderWithLocale(<AskPanel documentText="doc" document={FIXTURE_DOCUMENT} state="Kerala" />);
     expect(screen.getByText("Q?")).toBeInTheDocument();
-    expect(screen.getByText("A.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See clause: 1. Term" })).toHaveAttribute(
+      "href",
+      "#clause-c2",
+    );
+    expect(screen.getByText(/\[c99\]/)).toBeInTheDocument();
     expect(screen.getByText("Thinking…")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("busy right now");
     expect(screen.getByRole("button", { name: "Ask" })).toBeDisabled();
@@ -69,7 +73,7 @@ describe("AskPanel", () => {
     chat.status = "ready";
     chat.error = undefined;
     chat.sendMessage.mockClear();
-    renderWithLocale(<AskPanel documentText="doc" state="" />);
+    renderWithLocale(<AskPanel documentText="doc" document={FIXTURE_DOCUMENT} state="" />);
     fireEvent.submit(
       screen.getByRole("button", { name: "Ask" }).closest("form") as HTMLFormElement,
     );
@@ -81,7 +85,7 @@ describe("AskPanel", () => {
     chat.status = "streaming";
     chat.error = undefined;
     chat.sendMessage.mockClear();
-    renderWithLocale(<AskPanel documentText="doc" state="" />);
+    renderWithLocale(<AskPanel documentText="doc" document={FIXTURE_DOCUMENT} state="" />);
     await userEvent.type(screen.getByLabelText("Ask a question about this document"), "Q{enter}");
     expect(chat.sendMessage).not.toHaveBeenCalled();
   });
