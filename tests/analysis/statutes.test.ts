@@ -28,6 +28,7 @@ describe("attachStatutes", () => {
     const result = await attachStatutes(
       [risk(1, "penalty clause"), risk(2, null), risk(3, "  ")],
       client,
+      null,
     );
     expect(result[0]?.statute).toEqual({
       act: hit.act,
@@ -38,12 +39,17 @@ describe("attachStatutes", () => {
     expect(result[1]?.statute).toBeNull();
     expect(result[2]?.statute).toBeNull();
     expect(client.search).toHaveBeenCalledTimes(1);
-    expect(client.search).toHaveBeenCalledWith("penalty clause", 1);
+    expect(client.search).toHaveBeenCalledWith("penalty clause", 5);
   });
 
   it("caps the number of lookups per analysis", async () => {
     const client: IndiaCodeClient = { search: vi.fn(async () => [hit]), getSection: vi.fn() };
-    const result = await attachStatutes([risk(1, "a"), risk(2, "b"), risk(3, "c")], client, 2);
+    const result = await attachStatutes(
+      [risk(1, "a"), risk(2, "b"), risk(3, "c")],
+      client,
+      null,
+      2,
+    );
     expect(result.map((r) => r.statute !== null)).toEqual([true, true, false]);
   });
 
@@ -53,7 +59,7 @@ describe("attachStatutes", () => {
       search: vi.fn().mockResolvedValueOnce([]).mockRejectedValueOnce(new Error("down")),
       getSection: vi.fn(),
     };
-    const result = await attachStatutes([risk(1, "a"), risk(2, "b")], client);
+    const result = await attachStatutes([risk(1, "a"), risk(2, "b")], client, null);
     expect(result.map((r) => r.statute)).toEqual([null, null]);
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();

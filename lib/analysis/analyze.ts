@@ -8,11 +8,14 @@ import { documentBriefWireSchema, toBrief, type AnalysisResult } from "@/lib/ana
 import { attachStatutes } from "@/lib/analysis/statutes";
 import type { ParsedDocument } from "@/lib/document/types";
 import type { IndiaCodeClient } from "@/lib/statute/indiacode";
+import type { IndianState } from "@/lib/statute/jurisdiction";
 
 export interface AnalyzeInput {
   document: ParsedDocument;
   situation: string;
   locale: Locale;
+  /** The user's state, used to prefer local legislation in statute lookups. */
+  state: IndianState | null;
 }
 
 export interface AnalyzeDeps {
@@ -49,7 +52,7 @@ export async function analyzeDocument(
 
   const validIds = new Set(input.document.clauses.map((clause) => clause.id));
   const { brief, dropped } = verifyCitations(value, validIds);
-  const risks = await attachStatutes(brief.risks, deps.statutes);
+  const risks = await attachStatutes(brief.risks, deps.statutes, input.state);
 
   return {
     brief: { ...brief, risks },

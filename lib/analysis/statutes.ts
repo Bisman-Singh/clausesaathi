@@ -1,6 +1,10 @@
 import type { Risk, RiskWithStatute, StatuteReference } from "@/lib/analysis/schemas";
 import type { IndiaCodeClient } from "@/lib/statute/indiacode";
+import { pickForJurisdiction, type IndianState } from "@/lib/statute/jurisdiction";
 import { LIMITS } from "@/lib/constants";
+
+/** How many hits to fetch so a jurisdiction preference has something to choose from. */
+const HITS_PER_QUERY = 5;
 
 /**
  * Attach a real statute passage to each risk that asked for one.
@@ -11,6 +15,7 @@ import { LIMITS } from "@/lib/constants";
 export async function attachStatutes(
   risks: Risk[],
   client: IndiaCodeClient,
+  state: IndianState | null,
   maxLookups: number = LIMITS.MAX_STATUTE_LOOKUPS,
 ): Promise<RiskWithStatute[]> {
   let budget = maxLookups;
@@ -19,14 +24,18 @@ export async function attachStatutes(
       const query = risk.statuteQuery?.trim();
       if (!query || budget <= 0) return { ...risk, statute: null };
       budget -= 1;
-      return { ...risk, statute: await lookup(client, query) };
+      return { ...risk, statute: await lookup(client, query, state) };
     }),
   );
 }
 
-async function lookup(client: IndiaCodeClient, query: string): Promise<StatuteReference | null> {
+async function lookup(
+  client: IndiaCodeClient,
+  query: string,
+  state: IndianState | null,
+): Promise<StatuteReference | null> {
   try {
-    const [hit] = await client.search(query, 1);
+    const hit = pickForJurisdiction(await client.search(query, HITS_PER_QUERY), state);
     if (!hit) return null;
     return { act: hit.act, title: hit.title, snippet: hit.snippet, url: hit.url };
   } catch (error) {

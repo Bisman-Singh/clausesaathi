@@ -42,6 +42,7 @@ live("analyzeDocument against live services", () => {
         document: segmentDocument(SAMPLE),
         situation: "I am the tenant and want to leave after four months",
         locale: "en",
+        state: "Karnataka",
       },
       { factory: createModelFactory(env), env, statutes: createIndiaCodeClient() },
     );

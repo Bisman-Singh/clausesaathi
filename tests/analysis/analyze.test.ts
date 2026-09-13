@@ -56,7 +56,7 @@ describe("analyzeDocument", () => {
   it("generates a brief, verifies citations and attaches statutes", async () => {
     const generate = vi.fn(async () => ({ output: generated })) as never;
     const result = await analyzeDocument(
-      { document, situation: "I am the tenant", locale: "en" },
+      { document, situation: "I am the tenant", locale: "en", state: "Karnataka" },
       {
         factory: () => ({ modelId: "m" }) as unknown as LanguageModel,
         env: { GOOGLE_GENERATIVE_AI_API_KEY: "g" },
