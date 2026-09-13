@@ -6,8 +6,11 @@ import { segmentDocument } from "@/lib/document/segment";
 import { guardAiRequest, toHttpError } from "@/lib/http/ai-request";
 import { HttpError, jsonError, readJson } from "@/lib/http/guard";
 import { toLocale } from "@/lib/i18n";
+import { isOnTopic } from "@/lib/qa/gate";
+import { isInjectionAttempt } from "@/lib/qa/guard";
 import { hideModelError, toModelMessages } from "@/lib/qa/messages";
 import { qaSystemPrompt } from "@/lib/qa/prompt";
+import { refusalStream, withGroundingCheck } from "@/lib/qa/refusal";
 import { streamWithFallback } from "@/lib/qa/stream";
 import { statuteTools } from "@/lib/qa/tools";
 import { aiRateLimiter, serverDeps } from "@/lib/server/deps";
@@ -48,8 +51,18 @@ export async function POST(request: Request): Promise<Response> {
     const chain = modelChain(deps.env);
     if (chain.length === 0) throw new HttpError(503, "ai_unavailable");
     const state = body.state && isIndianState(body.state) ? body.state : null;
-    const system = qaSystemPrompt(segmentDocument(body.document), toLocale(body.locale));
+    const locale = toLocale(body.locale);
+    const document = segmentDocument(body.document);
     const messages = toModelMessages(body.messages);
+    const question = messages.at(-1)?.content;
+    // Two guards outside the answering model: a pattern screen and a separate topic gate.
+    if (typeof question !== "string" || isInjectionAttempt(question)) {
+      return createUIMessageStreamResponse({ stream: refusalStream(locale) });
+    }
+    if (!(await isOnTopic(document, question, locale, deps))) {
+      return createUIMessageStreamResponse({ stream: refusalStream(locale) });
+    }
+    const system = qaSystemPrompt(document, locale);
 
     const stream = streamWithFallback(
       chain,
@@ -67,7 +80,7 @@ export async function POST(request: Request): Promise<Response> {
         }).toUIMessageStream({ onError: hideModelError }),
       { onError: (spec) => console.warn("ask: model failed before answering", spec.id) },
     );
-    return createUIMessageStreamResponse({ stream });
+    return createUIMessageStreamResponse({ stream: withGroundingCheck(stream, locale) });
   } catch (error) {
     return jsonError(toHttpError(error));
   }

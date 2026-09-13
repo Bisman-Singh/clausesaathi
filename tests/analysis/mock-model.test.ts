@@ -6,6 +6,7 @@ import { diffDocuments } from "@/lib/compare/diff";
 import { explainChanges } from "@/lib/compare/explain";
 import { segmentDocument } from "@/lib/document/segment";
 import { transcribeFile } from "@/lib/document/transcribe";
+import { isOnTopic } from "@/lib/qa/gate";
 import { RENT_AGREEMENT_V1, RENT_AGREEMENT_V2 } from "@/lib/samples";
 import type { IndiaCodeClient } from "@/lib/statute/indiacode";
 
@@ -102,5 +103,14 @@ describe("real generateText through a mock model", () => {
     const prompt = model.doGenerateCalls[0]?.prompt ?? [];
     const user = prompt.find((message) => message.role === "user");
     expect(JSON.stringify(user)).toContain('"mediaType":"image/png"');
+  });
+
+  it("gates a question through the real generateText", async () => {
+    const document = segmentDocument(RENT_AGREEMENT_V1);
+    const verdict = await isOnTopic(document, "Will it rain?", "en", {
+      factory: () => modelReturning({ onTopic: false, reason: "weather" }),
+      env,
+    });
+    expect(verdict).toBe(false);
   });
 });

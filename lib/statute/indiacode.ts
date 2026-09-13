@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { LruCache } from "@/lib/cache/lru";
+import { INDIACODE_BASE_URL } from "@/lib/statute/urls";
 
 /**
  * Read-only client for the IndiaCode open API, which serves the text of
@@ -10,7 +11,7 @@ import { LruCache } from "@/lib/cache/lru";
  * done from its CSV exports rather than pagination.
  */
 
-export const INDIACODE_BASE_URL = "https://indiacode.ecourtsindia.com";
+export { INDIACODE_BASE_URL };
 
 /** Only links back to the API's own host are ever rendered; anything else is dropped. */
 export function isIndiaCodeUrl(value: string): boolean {

@@ -1,4 +1,4 @@
-import { INDIACODE_BASE_URL } from "@/lib/statute/indiacode";
+import { INDIACODE_BASE_URL } from "@/lib/statute/urls";
 
 /**
  * Free legal aid under Section 12 of the Legal Services Authorities Act, 1987.

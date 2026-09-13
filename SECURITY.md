@@ -35,6 +35,15 @@ quota, and the usual web application classes (XSS, clickjacking, CSRF).
 
 **AI boundary**
 
+- Q&A questions pass two guards outside the answering model: a pattern screen
+  for text that tries to re-instruct the assistant, and a separate, tiny model
+  call that decides whether the question is about the document at all. Either
+  failing returns a fixed refusal; the answering prompt is never reached.
+- The document is sent to the answering model inside `<document>` tags with
+  an instruction that nothing inside is a command; the only tool is a
+  read-only statute search; every answer is checked for a clause citation or an
+  explicit "not covered", and a caution is appended when it has neither.
+
 - Structured output is validated before rendering; nothing the model returns is
   rendered as HTML or executed.
 - Clause citations the model invents are dropped.
