@@ -31,6 +31,7 @@ describe("AnalysisView", () => {
     expect(screen.getByRole("navigation", { name: "On this page" })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "At a glance" })).toBeInTheDocument();
     expect(screen.getByText("citation(s) the AI made up were removed")).toBeInTheDocument();
+    expect(screen.getByText(/no matching provision for Karnataka/)).toBeInTheDocument();
     for (const name of [
       "In plain language",
       "Key terms",

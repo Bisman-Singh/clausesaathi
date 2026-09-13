@@ -92,6 +92,10 @@ const en = {
   clauseLink: "See clause",
   statuteLabel: "Governing law",
   statuteSource: "Read the section on IndiaCode",
+  statuteNotFound:
+    "IndiaCode was searched and no matching provision came up. A lawyer can tell you what applies.",
+  statuteNotFoundState:
+    "IndiaCode was searched and no matching provision for {state} came up. A lawyer can tell you what applies.",
   severityLow: "Low",
   severityMedium: "Medium",
   severityHigh: "High",
@@ -240,6 +244,10 @@ const hi = {
   clauseLink: "धारा देखें",
   statuteLabel: "लागू कानून",
   statuteSource: "IndiaCode पर धारा पढ़ें",
+  statuteNotFound:
+    "IndiaCode पर खोजा गया, कोई मेल खाता प्रावधान नहीं मिला। क्या लागू होता है, यह वकील बता सकते हैं।",
+  statuteNotFoundState:
+    "IndiaCode पर खोजा गया, {state} के लिए कोई मेल खाता प्रावधान नहीं मिला। क्या लागू होता है, यह वकील बता सकते हैं।",
   severityLow: "कम",
   severityMedium: "मध्यम",
   severityHigh: "उच्च",

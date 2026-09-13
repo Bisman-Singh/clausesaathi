@@ -85,7 +85,7 @@ export function AnalysisView({
           ) : null}
           {brief.risks.length > 0 ? (
             <Section id="risks" title={t("sectionRisks")}>
-              <RiskList document={document} risks={brief.risks} />
+              <RiskList document={document} risks={brief.risks} state={jurisdiction.state} />
             </Section>
           ) : null}
           <Inconsistencies document={document} items={brief.inconsistencies} />

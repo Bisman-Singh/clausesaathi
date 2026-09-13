@@ -27,11 +27,14 @@ const SEVERITY_KEY: Record<Severity, TranslationKey> = {
 export interface RiskListProps {
   document: ParsedDocument;
   risks: RiskWithStatute[];
+  /** The state whose law was searched, so an empty search can say so. */
+  state: string | null;
 }
 
 /** Risks, each tied to its clause and, when found, to the governing statute. */
-export function RiskList({ document, risks }: RiskListProps) {
+export function RiskList({ document, risks, state }: RiskListProps) {
   const t = useT();
+  const notFound = state ? t("statuteNotFoundState", { state }) : t("statuteNotFound");
   return (
     <ul className="flex flex-col gap-3">
       {risks.map((risk, index) => (
@@ -56,6 +59,11 @@ export function RiskList({ document, risks }: RiskListProps) {
               <a href={risk.statute.url} rel="noopener">
                 {t("statuteSource")}
               </a>
+            </p>
+          ) : null}
+          {!risk.statute && risk.statuteQuery ? (
+            <p className="mt-2 text-sm text-muted">
+              <span className="font-medium">{t("statuteLabel")}:</span> {notFound}
             </p>
           ) : null}
         </li>

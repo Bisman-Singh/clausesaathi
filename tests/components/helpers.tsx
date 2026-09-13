@@ -64,7 +64,7 @@ export const FIXTURE_RESULT: AnalysisResult = {
         severity: "medium",
         clauseId: "c7",
         explanation: "Unusual allocation.",
-        statuteQuery: null,
+        statuteQuery: "landlord entry notice",
         statute: null,
       },
     ],
