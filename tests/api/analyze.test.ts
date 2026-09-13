@@ -74,7 +74,7 @@ describe("POST /api/analyze", () => {
       new Request("https://app.example/api/analyze", {
         method: "POST",
         headers: { "sec-fetch-site": "same-origin" },
-        body: JSON.stringify({ text: SAMPLE_TEXT }),
+        body: new Blob([JSON.stringify({ text: SAMPLE_TEXT })]),
       }),
     );
     expect(response.status).toBe(200);

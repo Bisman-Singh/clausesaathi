@@ -22,7 +22,13 @@ export default defineConfig({
     include: ["tests/**/*.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
-      include: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.ts"],
+      include: [
+        "app/**/*.{ts,tsx}",
+        "components/**/*.{ts,tsx}",
+        "lib/**/*.ts",
+        "proxy.ts",
+        "next.config.ts",
+      ],
       exclude: ["**/*.d.ts"],
       reporter: ["text-summary", "html", "lcov"],
       thresholds: { lines: 100, functions: 100, statements: 100, branches: 100 },
