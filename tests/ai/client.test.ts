@@ -76,6 +76,8 @@ describe("createModelFactory", () => {
   it("refuses a provider that has no key", () => {
     const make = createModelFactory({ GOOGLE_GENERATIVE_AI_API_KEY: "g" });
     expect(() => make({ provider: "openai", id: "x" })).toThrow(AiUnavailableError);
+    const openaiOnly = createModelFactory({ OPENAI_API_KEY: "o" });
+    expect(() => openaiOnly({ provider: "google", id: "x" })).toThrow(AiUnavailableError);
   });
 });
 

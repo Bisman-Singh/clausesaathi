@@ -65,7 +65,7 @@ function splitHeading(block: string): HeadingSplit {
   if (numbered) {
     return rest.length > 0
       ? { heading: firstLine.trim(), text: rest }
-      : splitNumberedSingleLine(firstLine, numbered[1] ?? "");
+      : splitNumberedSingleLine(firstLine, numbered[1] as string);
   }
   if (isTitleLine(firstLine, rest.length)) {
     return { heading: firstLine.trim(), text: rest };

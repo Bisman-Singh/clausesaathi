@@ -13,6 +13,7 @@ describe("similarity", () => {
     expect(similarity("", "x")).toBe(0);
     expect(similarity("rent", "rent")).toBe(1);
     expect(similarity("rent", "deposit")).toBe(0);
+    expect(similarity("  ", "!!")).toBe(0);
   });
 
   it("is high for a small edit and low for a rewrite", () => {
@@ -33,6 +34,14 @@ describe("diffWords", () => {
       { type: "same", text: "the" },
       { type: "removed", text: "5th" },
       { type: "added", text: "10th" },
+    ]);
+  });
+
+  it("prefers an addition when it preserves more common words", () => {
+    expect(diffWords("the deposit", "the full deposit")).toEqual([
+      { type: "same", text: "the" },
+      { type: "added", text: "full" },
+      { type: "same", text: "deposit" },
     ]);
   });
 
@@ -74,6 +83,15 @@ describe("diffDocuments", () => {
     );
     expect(changes[0]?.kind).toBe("modified");
     expect(changes[0]?.segments).toBeNull();
+  });
+
+  it("lets each earlier clause match at most one later clause", () => {
+    const one = segmentDocument("The tenant pays rent monthly by bank transfer.");
+    const two = segmentDocument(
+      "The tenant pays rent monthly by bank transfer.\n\nThe tenant pays rent monthly by bank transfer too.",
+    );
+    const kinds = diffDocuments(one, two).map((c) => c.kind);
+    expect(kinds).toEqual(["unchanged", "added"]);
   });
 
   it("handles empty documents", () => {

@@ -94,7 +94,7 @@ function nextStep(a: string[], b: string[], table: number[][], i: number, j: num
 }
 
 function cell(table: number[][], i: number, j: number): number {
-  return table[i]?.[j] ?? 0;
+  return (table[i] as number[])[j] as number;
 }
 
 function lcsTable(a: string[], b: string[]): number[][] {
@@ -105,7 +105,10 @@ function lcsTable(a: string[], b: string[]): number[][] {
     for (let j = b.length - 1; j >= 0; j -= 1) {
       const row = table[i] as number[];
       const next = table[i + 1] as number[];
-      row[j] = a[i] === b[j] ? (next[j + 1] ?? 0) + 1 : Math.max(next[j] ?? 0, row[j + 1] ?? 0);
+      row[j] =
+        a[i] === b[j]
+          ? (next[j + 1] as number) + 1
+          : Math.max(next[j] as number, row[j + 1] as number);
     }
   }
   return table;
