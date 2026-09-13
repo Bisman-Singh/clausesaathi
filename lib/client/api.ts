@@ -57,7 +57,11 @@ export function errorKeyFor(error: unknown): TranslationKey {
   return "errorGeneric";
 }
 
+/** The platform answers oversized bodies itself, without our JSON shape. */
+const PAYLOAD_TOO_LARGE = 413;
+
 async function parseResponse<T>(response: Response): Promise<T> {
+  if (response.status === PAYLOAD_TOO_LARGE) throw new ApiError("file_too_large", response.status);
   const body = (await response.json().catch(() => ({}))) as { error?: string };
   if (!response.ok) throw new ApiError(body.error ?? "unknown", response.status);
   return body as T;

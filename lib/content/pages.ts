@@ -98,7 +98,7 @@ export const ACCESSIBILITY_CONTENT: Record<Locale, ContentSection[]> = {
     {
       heading: "Known limitations",
       paragraphs: [
-        "Scanned PDFs without a text layer cannot be read; the app says so and asks for pasted text instead. Statute text opens on IndiaCode, whose accessibility we do not control.",
+        "Scans and photos are transcribed by the model and labelled as such; check the transcription against the original. Statute text opens on IndiaCode, whose accessibility we do not control.",
       ],
     },
     {
@@ -133,7 +133,7 @@ export const ACCESSIBILITY_CONTENT: Record<Locale, ContentSection[]> = {
     {
       heading: "ज्ञात सीमाएँ",
       paragraphs: [
-        "बिना टेक्स्ट परत की स्कैन की गई PDF नहीं पढ़ी जा सकतीं; ऐप यह बताता है और पाठ चिपकाने को कहता है। कानून का पाठ IndiaCode पर खुलता है, जिसकी सुगम्यता हमारे नियंत्रण में नहीं है।",
+        "स्कैन और फ़ोटो का पाठ मॉडल लिखकर निकालता है और उसे वैसा ही चिह्नित करता है; उसे मूल से मिला लें। कानून का पाठ IndiaCode पर खुलता है, जिसकी सुगम्यता हमारे नियंत्रण में नहीं है।",
       ],
     },
     {

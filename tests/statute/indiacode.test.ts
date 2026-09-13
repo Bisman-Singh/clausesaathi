@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { isIndiaCodeUrl, describe, expect, it, vi } from "vitest";
 import {
   INDIACODE_BASE_URL,
   createIndiaCodeClient,
@@ -140,6 +140,14 @@ describe("parseStatuteRef", () => {
       actId: "consumer-protection-act",
       number: "2",
     });
+  });
+
+  it("only trusts https links on IndiaCode's own host", () => {
+    expect(isIndiaCodeUrl(`${INDIACODE_BASE_URL}/contract-act/section/73/`)).toBe(true);
+    expect(isIndiaCodeUrl("http://indiacode.ecourtsindia.com/x")).toBe(false);
+    expect(isIndiaCodeUrl("https://evil.example/indiacode.ecourtsindia.com")).toBe(false);
+    expect(isIndiaCodeUrl("javascript:alert(1)")).toBe(false);
+    expect(isIndiaCodeUrl("not a url")).toBe(false);
   });
 
   it("rejects refs without a section", () => {

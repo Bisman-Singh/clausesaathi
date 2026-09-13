@@ -36,6 +36,21 @@ export function uploadMediaType(file: { type: string; name: string }): UploadMed
   return BY_EXTENSION[extension] ?? null;
 }
 
+const MAGIC: Array<{ type: UploadMediaType; bytes: number[]; at?: number }> = [
+  { type: "application/pdf", bytes: [0x25, 0x50, 0x44, 0x46] },
+  { type: "image/jpeg", bytes: [0xff, 0xd8, 0xff] },
+  { type: "image/png", bytes: [0x89, 0x50, 0x4e, 0x47] },
+  { type: "image/webp", bytes: [0x57, 0x45, 0x42, 0x50], at: 8 },
+];
+
+/** The media type the bytes actually are, from their signature, or null when none matches. */
+export function sniffMediaType(bytes: Uint8Array): UploadMediaType | null {
+  const match = MAGIC.find(({ bytes: signature, at = 0 }) =>
+    signature.every((value, index) => bytes[at + index] === value),
+  );
+  return match ? match.type : null;
+}
+
 /** Whether the upload is an image, which always needs transcription. */
 export function isImageUpload(mediaType: UploadMediaType): boolean {
   return mediaType.startsWith("image/");

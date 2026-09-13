@@ -7,8 +7,8 @@ export const LIMITS = {
   MAX_DOCUMENT_CHARS: 60_000,
   /** Shortest text that can plausibly be a legal document. */
   MIN_DOCUMENT_CHARS: 80,
-  /** Largest upload accepted, PDF or image, in bytes. Phone photos fit. */
-  MAX_UPLOAD_BYTES: 8 * 1024 * 1024,
+  /** Largest upload accepted, PDF or image, in bytes; the platform rejects bodies over 4.5 MB. Photos are shrunk in the browser first. */
+  MAX_UPLOAD_BYTES: 4 * 1024 * 1024,
   /** Most pages read from a PDF. */
   MAX_PDF_PAGES: 40,
   /** Longest free-text description of the user's situation. */
@@ -25,6 +25,9 @@ export const LIMITS = {
 
 /** Per-model call budget, in milliseconds, before the next model is tried. */
 export const AI_TIMEOUT_MS = 30_000;
+
+/** No further model is tried once a request has spent this long; keeps the chain inside the function's own limit. */
+export const AI_DEADLINE_MS = 100_000;
 
 /** Output token ceiling for structured generations. */
 export const AI_MAX_OUTPUT_TOKENS = 6_000;

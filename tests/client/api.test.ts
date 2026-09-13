@@ -7,6 +7,16 @@ import { segmentDocument } from "@/lib/document/segment";
 afterEach(() => vi.unstubAllGlobals());
 
 describe("api client", () => {
+  it("treats the platform's 413 as a file-size error even without a JSON body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Request Entity Too Large", { status: 413 })),
+    );
+    await expect(
+      analyze({ text: "t", situation: "", locale: "en", state: "", stateBasis: "user" }),
+    ).rejects.toMatchObject({ code: "file_too_large", status: 413 });
+  });
+
   it("posts JSON for text and multipart for files, and parses the body", async () => {
     const fetchMock = vi.fn(async () => Response.json({ ok: true }));
     vi.stubGlobal("fetch", fetchMock);
@@ -35,6 +45,16 @@ describe("api client", () => {
     await expect(compare("a", "b", "en")).resolves.toEqual({ ok: true });
   });
 
+  it("treats the platform's 413 as a file-size error even without a JSON body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Request Entity Too Large", { status: 413 })),
+    );
+    await expect(
+      analyze({ text: "t", situation: "", locale: "en", state: "", stateBasis: "user" }),
+    ).rejects.toMatchObject({ code: "file_too_large", status: 413 });
+  });
+
   it("turns error responses into ApiError, even without a JSON body", async () => {
     vi.stubGlobal("fetch", async () => new Response("nope", { status: 500 }));
     const error = await analyze({
@@ -47,6 +67,16 @@ describe("api client", () => {
     expect(error).toBeInstanceOf(ApiError);
     expect(error.code).toBe("unknown");
     expect(error.status).toBe(500);
+  });
+
+  it("treats the platform's 413 as a file-size error even without a JSON body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Request Entity Too Large", { status: 413 })),
+    );
+    await expect(
+      analyze({ text: "t", situation: "", locale: "en", state: "", stateBasis: "user" }),
+    ).rejects.toMatchObject({ code: "file_too_large", status: 413 });
   });
 
   it("maps error codes to translation keys", () => {
@@ -66,6 +96,16 @@ describe("storage", () => {
   };
   const isNumber = (value: unknown): value is number => typeof value === "number";
 
+  it("treats the platform's 413 as a file-size error even without a JSON body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Request Entity Too Large", { status: 413 })),
+    );
+    await expect(
+      analyze({ text: "t", situation: "", locale: "en", state: "", stateBasis: "user" }),
+    ).rejects.toMatchObject({ code: "file_too_large", status: 413 });
+  });
+
   it("round-trips valid values and rejects invalid or missing ones", () => {
     saveAnalysis(42, storage);
     expect(loadAnalysis(isNumber, storage)).toBe(42);
@@ -75,6 +115,16 @@ describe("storage", () => {
     expect(loadAnalysis(isNumber, storage)).toBeNull();
     memory.set("clausesaathi.analysis", "{broken");
     expect(loadAnalysis(isNumber, storage)).toBeNull();
+  });
+
+  it("treats the platform's 413 as a file-size error even without a JSON body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Request Entity Too Large", { status: 413 })),
+    );
+    await expect(
+      analyze({ text: "t", situation: "", locale: "en", state: "", stateBasis: "user" }),
+    ).rejects.toMatchObject({ code: "file_too_large", status: 413 });
   });
 
   it("swallows storage failures", () => {
@@ -97,6 +147,16 @@ describe("storage", () => {
 
 describe("clause helpers", () => {
   const doc = segmentDocument("Title\n\n1. Rent\nPay monthly.\n\nPlain paragraph without heading.");
+
+  it("treats the platform's 413 as a file-size error even without a JSON body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Request Entity Too Large", { status: 413 })),
+    );
+    await expect(
+      analyze({ text: "t", situation: "", locale: "en", state: "", stateBasis: "user" }),
+    ).rejects.toMatchObject({ code: "file_too_large", status: 413 });
+  });
 
   it("builds anchors and human labels in both languages", () => {
     expect(clauseAnchor("c2")).toBe("clause-c2");

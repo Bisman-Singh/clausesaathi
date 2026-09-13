@@ -15,6 +15,13 @@ export function guardAiRequest(request: Request, limiter: RateLimiter): void {
 export function toHttpError(error: unknown): unknown {
   if (error instanceof PdfError) return new HttpError(400, `pdf_${error.code}`);
   if (error instanceof AiUnavailableError) {
+    // Enough to tell a quota error from an outage; never the prompt or the provider's body.
+    const cause = error.cause as { name?: string; statusCode?: number } | undefined;
+    console.warn("ai unavailable", {
+      attempts: error.attempts,
+      cause: cause?.name,
+      status: cause?.statusCode,
+    });
     return new HttpError(503, "ai_unavailable", "The AI service is busy. Please retry shortly.");
   }
   return error;

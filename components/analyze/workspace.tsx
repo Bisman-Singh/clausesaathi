@@ -15,6 +15,7 @@ import {
   writeAnalysis,
 } from "@/lib/client/analysis-store";
 import { analyze, errorKeyFor, type AnalyzeResponse } from "@/lib/client/api";
+import { shrinkImage } from "@/lib/client/image";
 import type { TranslationKey } from "@/lib/i18n";
 
 /** What is kept for the session: the response plus what produced it. */
@@ -68,7 +69,8 @@ export function AnalyzeWorkspace() {
     setBusy(true);
     setErrorKey(null);
     try {
-      const response = await analyze({ ...values, locale });
+      const file = values.file ? await shrinkImage(values.file) : null;
+      const response = await analyze({ ...values, file, locale });
       const documentText = values.file ? textFromClauses(response) : values.text;
       const state = response.jurisdiction.state ?? "";
       writeAnalysis({ response, documentText, state } satisfies StoredAnalysis);

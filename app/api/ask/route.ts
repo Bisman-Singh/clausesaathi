@@ -12,7 +12,7 @@ import { statuteTools } from "@/lib/qa/tools";
 import { aiRateLimiter, serverDeps } from "@/lib/server/deps";
 import { isIndianState } from "@/lib/statute/jurisdiction";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const partSchema = z.object({ type: z.string(), text: z.string().optional() });
 const messageSchema = z.object({
@@ -21,7 +21,11 @@ const messageSchema = z.object({
 });
 const bodySchema = z.object({
   document: z.string().min(LIMITS.MIN_DOCUMENT_CHARS).max(LIMITS.MAX_DOCUMENT_CHARS),
-  messages: z.array(messageSchema).min(1).max(LIMITS.MAX_CHAT_MESSAGES),
+  messages: z
+    .array(messageSchema)
+    .min(1)
+    .max(LIMITS.MAX_CHAT_MESSAGES)
+    .refine((list) => list.at(-1)?.role === "user", "the last turn must be the user's"),
   locale: z.string().optional(),
   state: z.string().optional(),
 });
@@ -70,7 +74,7 @@ export async function POST(request: Request): Promise<Response> {
           system,
           messages,
           tools: statuteTools(deps.statutes, state),
-          stopWhen: stepCountIs(3),
+          stopWhen: stepCountIs(2),
           maxOutputTokens: 1200,
           temperature: 0.2,
           abortSignal: AbortSignal.timeout(AI_TIMEOUT_MS),

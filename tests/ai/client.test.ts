@@ -97,3 +97,21 @@ describe("envFromProcess", () => {
     });
   });
 });
+
+describe("withModelFallback deadline", () => {
+  it("stops trying further models once the request budget is spent", async () => {
+    let clock = 0;
+    const attempt = vi.fn(async () => {
+      clock += 60_000;
+      throw new Error("slow failure");
+    });
+    const factory = () => ({ modelId: "fake" }) as never;
+    await expect(
+      withModelFallback(factory, { GOOGLE_GENERATIVE_AI_API_KEY: "k" }, attempt, {
+        deadlineMs: 100_000,
+        now: () => clock,
+      }),
+    ).rejects.toBeInstanceOf(AiUnavailableError);
+    expect(attempt).toHaveBeenCalledTimes(2);
+  });
+});

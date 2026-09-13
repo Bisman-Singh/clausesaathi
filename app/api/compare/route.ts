@@ -8,7 +8,7 @@ import { HttpError, jsonError, readJson } from "@/lib/http/guard";
 import { toLocale } from "@/lib/i18n";
 import { aiRateLimiter, serverDeps } from "@/lib/server/deps";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const bodySchema = z.object({
   before: z.string().min(LIMITS.MIN_DOCUMENT_CHARS).max(LIMITS.MAX_DOCUMENT_CHARS),

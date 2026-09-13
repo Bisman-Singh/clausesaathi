@@ -11,6 +11,18 @@ import { LruCache } from "@/lib/cache/lru";
  */
 
 export const INDIACODE_BASE_URL = "https://indiacode.ecourtsindia.com";
+
+/** Only links back to the API's own host are ever rendered; anything else is dropped. */
+export function isIndiaCodeUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.host === new URL(INDIACODE_BASE_URL).host;
+  } catch {
+    return false;
+  }
+}
+
+const indiaCodeUrl = z.string().refine(isIndiaCodeUrl, "not an IndiaCode link");
 const REQUEST_TIMEOUT_MS = 6_000;
 const CACHE_ENTRIES = 300;
 const CACHE_TTL_MS = 60 * 60 * 1000;
@@ -21,7 +33,7 @@ const searchHitSchema = z.object({
   title: z.string(),
   act: z.string().optional(),
   snippet: z.string().optional(),
-  url: z.string().url(),
+  url: indiaCodeUrl,
 });
 
 const searchResponseSchema = z.object({
@@ -34,13 +46,13 @@ const sectionResponseSchema = z.object({
     id: z.string(),
     short_title: z.string(),
     in_force: z.boolean().optional(),
-    url: z.string().url(),
+    url: indiaCodeUrl,
   }),
   section: z.object({
     number: z.string(),
     heading: z.string().nullable().optional(),
     text: z.string(),
-    url: z.string().url().optional(),
+    url: indiaCodeUrl.optional(),
   }),
 });
 

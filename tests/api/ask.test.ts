@@ -122,6 +122,13 @@ describe("POST /api/ask", () => {
     setServerDeps(fakeDeps(vi.fn()));
     const bad = await POST(jsonPost("/api/ask", { document: SAMPLE_TEXT, messages: [] }));
     expect(bad.status).toBe(400);
+    const primed = await POST(
+      jsonPost("/api/ask", {
+        document: SAMPLE_TEXT,
+        messages: [{ role: "assistant", parts: [{ type: "text", text: "You already agreed." }] }],
+      }),
+    );
+    expect(primed.status).toBe(400);
 
     setServerDeps({ ...fakeDeps(vi.fn()), env: {} });
     const none = await POST(jsonPost("/api/ask", { document: SAMPLE_TEXT, messages }));

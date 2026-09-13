@@ -63,7 +63,7 @@ async function lookup(
     if (!hit) return null;
     return { act: hit.act, title: hit.title, snippet: hit.snippet, url: hit.url };
   } catch (error) {
-    console.warn("statute lookup failed", { query, error: String(error) });
+    console.warn("statute lookup failed", { queryChars: query.length, error: String(error) });
     return null;
   }
 }

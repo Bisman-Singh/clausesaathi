@@ -2,7 +2,12 @@ import { z } from "zod";
 import { LIMITS, type Locale } from "@/lib/constants";
 import { PdfError, extractPdfText } from "@/lib/document/pdf";
 import { transcribeFile, type TranscribeDeps } from "@/lib/document/transcribe";
-import { isImageUpload, uploadMediaType, type UploadMediaType } from "@/lib/document/upload";
+import {
+  isImageUpload,
+  sniffMediaType,
+  uploadMediaType,
+  type UploadMediaType,
+} from "@/lib/document/upload";
 import { HttpError, assertContentLength, readJson } from "@/lib/http/guard";
 import { toLocale } from "@/lib/i18n";
 import { isIndianState, type IndianState } from "@/lib/statute/jurisdiction";
@@ -77,6 +82,8 @@ async function readMultipart(request: Request, deps: TranscribeDeps): Promise<Ra
   if (!mediaType) throw new HttpError(400, "unsupported_file");
   if (file.size > LIMITS.MAX_UPLOAD_BYTES) throw new HttpError(400, "file_too_large");
   const bytes = new Uint8Array(await file.arrayBuffer());
+  // The declared type only picks the family; the bytes must agree before anything is parsed or sent on.
+  if (sniffMediaType(bytes) !== mediaType) throw new HttpError(400, "unsupported_file");
   const { text, source } = await readFile(bytes, mediaType, deps);
   return {
     text,

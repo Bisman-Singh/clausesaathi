@@ -65,10 +65,16 @@ export async function readJson<T>(
 }
 
 /** The caller's address, for rate limiting only. Never stored. */
+/**
+ * The caller's address for rate limiting. Vercel sets `x-real-ip` from the
+ * connection, so it wins; the first `x-forwarded-for` entry is only a
+ * fallback for other hosts, where a client could forge it.
+ */
 export function clientAddress(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const first = forwarded?.split(",")[0]?.trim();
-  return first || request.headers.get("x-real-ip") || "unknown";
+  const real = request.headers.get("x-real-ip")?.trim();
+  if (real) return real;
+  const first = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return first || "unknown";
 }
 
 export function jsonError(error: unknown): Response {

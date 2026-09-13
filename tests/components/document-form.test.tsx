@@ -84,7 +84,7 @@ describe("DocumentForm", () => {
     });
     await userEvent.upload(input, big);
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("larger than 8 MB");
+    expect(screen.getByRole("alert")).toHaveTextContent("larger than 4 MB");
 
     fireEvent.change(input, { target: { files: [] } });
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));

@@ -1,7 +1,7 @@
 import { createGoogle } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
-import { AI_TIMEOUT_MS } from "@/lib/constants";
+import { AI_DEADLINE_MS, AI_TIMEOUT_MS } from "@/lib/constants";
 import { modelChain, type ModelEnv, type ModelSpec } from "@/lib/ai/models";
 
 /** Raised when every model in the chain failed for a request. */
@@ -49,7 +49,10 @@ export interface FallbackResult<T> {
 export interface FallbackOptions {
   chain?: ModelSpec[];
   timeoutMs?: number;
+  /** Total budget across attempts; once spent, remaining models are not tried. */
+  deadlineMs?: number;
   onError?: (spec: ModelSpec, error: unknown) => void;
+  now?: () => number;
 }
 
 /**
@@ -67,9 +70,13 @@ export async function withModelFallback<T>(
 ): Promise<FallbackResult<T>> {
   const chain = options.chain ?? modelChain(env);
   const timeoutMs = options.timeoutMs ?? AI_TIMEOUT_MS;
+  const deadlineMs = options.deadlineMs ?? AI_DEADLINE_MS;
+  const now = options.now ?? Date.now;
+  const started = now();
   let lastError: unknown = new Error("No models configured");
 
   for (const [index, spec] of chain.entries()) {
+    if (outOfTime(index, now() - started, deadlineMs)) break;
     try {
       const value = await attempt({
         model: factory(spec),
@@ -86,6 +93,11 @@ export async function withModelFallback<T>(
   throw new AiUnavailableError("All configured models failed", chain.length, {
     cause: lastError,
   });
+}
+
+/** The first model always gets its turn; later ones only while the request budget lasts. */
+function outOfTime(index: number, elapsedMs: number, deadlineMs: number): boolean {
+  return index > 0 && elapsedMs >= deadlineMs;
 }
 
 /** Read provider configuration from the process environment. */

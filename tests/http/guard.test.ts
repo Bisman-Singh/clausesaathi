@@ -71,9 +71,12 @@ describe("assertContentLength and readJson", () => {
 });
 
 describe("clientAddress", () => {
-  it("prefers the first forwarded address, then x-real-ip, then unknown", () => {
+  it("prefers the platform's x-real-ip, then the first forwarded address, then unknown", () => {
     expect(clientAddress(request({ "x-forwarded-for": "1.1.1.1, 2.2.2.2" }))).toBe("1.1.1.1");
     expect(clientAddress(request({ "x-real-ip": "3.3.3.3" }))).toBe("3.3.3.3");
+    expect(clientAddress(request({ "x-real-ip": "3.3.3.3", "x-forwarded-for": "9.9.9.9" }))).toBe(
+      "3.3.3.3",
+    );
     expect(clientAddress(request({ "x-forwarded-for": " " }))).toBe("unknown");
     expect(clientAddress(request({}))).toBe("unknown");
   });

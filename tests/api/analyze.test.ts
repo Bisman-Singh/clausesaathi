@@ -150,9 +150,18 @@ describe("POST /api/analyze", () => {
     await expect(ok.json()).resolves.toMatchObject({ source: "transcription" });
 
     setServerDeps(fakeDeps(vi.fn(async () => ({ text: "..." }))));
-    const blank = await POST(multipart(new Uint8Array(4), "blank.png", "image/png"));
+    const blank = await POST(
+      multipart(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0, 0]), "blank.png", "image/png"),
+    );
     expect(blank.status).toBe(400);
     await expect(blank.json()).resolves.toMatchObject({ error: "no_text_found" });
+  });
+
+  it("refuses a file whose bytes are not what its name and type claim", async () => {
+    setServerDeps(fakeDeps(vi.fn()));
+    const response = await POST(multipart(new Uint8Array(8), "photo.jpg", "image/jpeg"));
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: "unsupported_file" });
   });
 
   it("rejects file types it cannot read", async () => {
@@ -192,7 +201,7 @@ describe("POST /api/analyze", () => {
   it("maps PDF problems to stable error codes", async () => {
     setServerDeps(fakeDeps(vi.fn()));
     const form = new FormData();
-    form.append("file", new File([new TextEncoder().encode("nope")], "x.pdf"));
+    form.append("file", new File([new TextEncoder().encode("%PDF-1.4 but not really")], "x.pdf"));
     const response = await POST(
       new Request("https://app.example/api/analyze", {
         method: "POST",
