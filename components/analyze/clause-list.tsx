@@ -10,7 +10,7 @@ export function ClauseList({ document }: { document: ParsedDocument }) {
           key={clause.id}
           id={clauseAnchor(clause.id)}
           tabIndex={-1}
-          className="rounded-md border border-line bg-surface p-3 target:border-accent"
+          className="rounded-lg border border-line bg-surface p-3 target:border-accent target:bg-accent-soft"
         >
           {clause.heading ? <h3 className="font-semibold">{clause.heading}</h3> : null}
           <p className="whitespace-pre-wrap">{clause.text}</p>

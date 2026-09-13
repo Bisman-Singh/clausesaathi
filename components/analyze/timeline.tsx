@@ -36,7 +36,7 @@ export function Timeline({ document, obligations, today }: TimelineProps) {
   return (
     <div className="flex flex-col gap-4">
       {needed.length > 0 ? (
-        <fieldset className="rounded-md border border-line p-4">
+        <fieldset className="rounded-lg border border-line bg-surface-2 p-4">
           <legend className="px-1 font-medium">{t("anchorHeading")}</legend>
           <p className="mb-3 text-sm text-muted">{t("anchorHint")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -58,11 +58,11 @@ export function Timeline({ document, obligations, today }: TimelineProps) {
         </fieldset>
       ) : null}
 
-      <ol className="flex flex-col gap-3">
+      <ol className="flex flex-col gap-3 border-l-2 border-line pl-5">
         {items.map(({ obligation, resolved }, index) => (
           <li
             key={`${obligation.clauseId}-${index}`}
-            className="rounded-md border border-line bg-surface p-3"
+            className="relative rounded-lg border border-line bg-surface p-3 before:absolute before:-left-[1.7rem] before:top-4 before:h-3 before:w-3 before:rounded-full before:bg-accent"
           >
             <p>
               <strong>{obligation.party}</strong>: {obligation.action}{" "}

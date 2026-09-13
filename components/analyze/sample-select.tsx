@@ -1,12 +1,11 @@
 "use client";
 
 import { useLocale, useT } from "@/components/locale-provider";
-import { CONTROL_CLASS, Field } from "@/components/ui/field";
-import { SAMPLES } from "@/lib/samples";
+import { SAMPLES, type SampleDocument } from "@/lib/samples";
 
 export interface SampleSelectProps {
   id: string;
-  onChoose: (sampleId: string) => void;
+  onChoose: (sample: SampleDocument) => void;
 }
 
 /** Pick one of the synthetic sample documents to try the product. */
@@ -14,22 +13,23 @@ export function SampleSelect({ id, onChoose }: SampleSelectProps) {
   const t = useT();
   const { locale } = useLocale();
   return (
-    <Field id={id} label={t("formSampleLabel")}>
-      {() => (
-        <select
-          id={id}
-          defaultValue=""
-          onChange={(event) => onChoose(event.target.value)}
-          className={`${CONTROL_CLASS} min-h-11`}
-        >
-          <option value="">{t("formSamplePlaceholder")}</option>
-          {SAMPLES.map((sample) => (
-            <option key={sample.id} value={sample.id}>
+    <div role="group" aria-labelledby={`${id}-label`} className="flex flex-col gap-2">
+      <p id={`${id}-label`} className="font-medium">
+        {t("formSampleLabel")}
+      </p>
+      <ul className="flex flex-wrap gap-2">
+        {SAMPLES.map((sample) => (
+          <li key={sample.id}>
+            <button
+              type="button"
+              onClick={() => onChoose(sample)}
+              className="inline-flex min-h-11 items-center rounded-full border border-line bg-surface px-4 text-sm font-medium hover:border-accent hover:bg-accent-soft"
+            >
               {sample.title[locale]}
-            </option>
-          ))}
-        </select>
-      )}
-    </Field>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

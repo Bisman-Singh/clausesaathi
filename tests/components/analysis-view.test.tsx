@@ -25,7 +25,11 @@ const view = (
 describe("AnalysisView", () => {
   it("renders every section with clause citations and the statute link", async () => {
     const { container } = renderWithLocale(view);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("What this document says");
+    expect(
+      screen.getByRole("heading", { level: 2, name: "What this document says" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "On this page" })).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "At a glance" })).toBeInTheDocument();
     expect(screen.getByText("citation(s) the AI made up were removed")).toBeInTheDocument();
     for (const name of [
       "In plain language",

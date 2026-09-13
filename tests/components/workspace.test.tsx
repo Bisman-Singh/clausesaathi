@@ -43,11 +43,11 @@ describe("AnalyzeWorkspace", () => {
   it("submits a sample, shows the result, focuses its heading and stores it", async () => {
     vi.stubGlobal("fetch", vi.fn(fetchJson(FIXTURE_RESPONSE)));
     renderWithLocale(<AnalyzeWorkspace />);
-    await userEvent.selectOptions(screen.getByLabelText("Or try a sample"), "rent-agreement");
+    await userEvent.click(screen.getByRole("button", { name: "Rent agreement" }));
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
     await waitFor(() =>
       expect(
-        screen.getByRole("heading", { level: 1, name: "What this document says" }),
+        screen.getByRole("heading", { level: 2, name: "What this document says" }),
       ).toBeInTheDocument(),
     );
     await waitFor(() => expect(document.activeElement?.id).toBe("result-heading"));
@@ -88,7 +88,7 @@ describe("AnalyzeWorkspace", () => {
       vi.fn(fetchJson({ ...FIXTURE_RESPONSE, jurisdiction: { state: "Goa", basis: "document" } })),
     );
     renderWithLocale(<AnalyzeWorkspace />);
-    await userEvent.selectOptions(screen.getByLabelText("Or try a sample"), "legal-notice");
+    await userEvent.click(screen.getByRole("button", { name: "Legal notice from a landlord" }));
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
     await waitFor(() =>
       expect(screen.getByText("Goa, guessed from the document")).toBeInTheDocument(),
@@ -123,7 +123,7 @@ describe("AnalyzeWorkspace", () => {
   it("shows a translated error when the API refuses", async () => {
     vi.stubGlobal("fetch", vi.fn(fetchJson({ error: "rate_limited" }, 429)));
     renderWithLocale(<AnalyzeWorkspace />);
-    await userEvent.selectOptions(screen.getByLabelText("Or try a sample"), "legal-notice");
+    await userEvent.click(screen.getByRole("button", { name: "Legal notice from a landlord" }));
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Too many requests"));
   });
@@ -135,7 +135,7 @@ describe("AnalyzeWorkspace", () => {
     );
     renderWithLocale(<AnalyzeWorkspace />);
     expect(
-      screen.getByRole("heading", { level: 1, name: "What this document says" }),
+      screen.getByRole("heading", { level: 2, name: "What this document says" }),
     ).toBeInTheDocument();
   });
 });

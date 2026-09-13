@@ -30,7 +30,9 @@ describe("pages", () => {
 
   it("renders the home and compare pages", () => {
     const { rerender } = renderWithLocale(<HomePage />);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Paste or upload");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Understand any legal document",
+    );
     rerender(<ComparePage />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Compare two versions");
   });

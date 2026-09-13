@@ -8,10 +8,12 @@ export const SOURCE_URL = "https://github.com/Bisman-Singh/clausesaathi";
 export function SiteFooter() {
   const t = useT();
   return (
-    <footer className="mt-12 border-t border-line bg-surface">
-      <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-6 text-sm text-muted">
-        <p>{t("notAdvice")}</p>
-        <p>{t("footerLaw")}</p>
+    <footer className="mt-16 border-t border-line bg-surface">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 text-sm text-muted sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex max-w-2xl flex-col gap-1">
+          <p className="font-medium text-text">{t("notAdvice")}</p>
+          <p>{t("footerLaw")}</p>
+        </div>
         <p className="flex flex-wrap gap-4">
           <Link href="/accessibility">{t("navAccessibility")}</Link>
           <a href={SOURCE_URL} rel="noopener">

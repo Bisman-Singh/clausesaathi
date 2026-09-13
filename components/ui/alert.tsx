@@ -18,7 +18,7 @@ export interface AlertProps {
 
 export function Alert({ tone = "info", role = "status", children }: AlertProps) {
   return (
-    <div role={role} className={`rounded-md px-4 py-3 ${TONES[tone]}`}>
+    <div role={role} className={`rounded-lg px-4 py-3 ${TONES[tone]}`}>
       {children}
     </div>
   );

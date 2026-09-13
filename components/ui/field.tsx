@@ -37,4 +37,4 @@ export function Field({ id, label, hint, error, children }: FieldProps) {
 }
 
 export const CONTROL_CLASS =
-  "w-full rounded-md border border-line bg-surface px-3 py-2 text-text placeholder:text-muted aria-[invalid=true]:border-danger-text";
+  "w-full rounded-lg border border-line bg-surface px-3 py-2 text-text placeholder:text-muted hover:border-muted aria-[invalid=true]:border-danger-text";

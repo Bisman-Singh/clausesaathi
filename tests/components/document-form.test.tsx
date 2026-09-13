@@ -44,7 +44,7 @@ describe("DocumentForm", () => {
     const onSubmit = vi.fn();
     renderWithLocale(<DocumentForm busy={false} onSubmit={onSubmit} />);
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
-    await userEvent.selectOptions(screen.getByLabelText("Or try a sample"), "rent-agreement");
+    await userEvent.click(screen.getByRole("button", { name: "Rent agreement" }));
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByLabelText("Document text")).toHaveValue(RENT_AGREEMENT_V1);
     await userEvent.type(screen.getByLabelText("Your situation (optional)"), "  tenant  ");
@@ -56,8 +56,7 @@ describe("DocumentForm", () => {
       situation: "tenant",
       state: "Karnataka",
     });
-    await userEvent.selectOptions(screen.getByLabelText("Or try a sample"), "");
-    expect(screen.getByLabelText("Document text")).toHaveValue("");
+    expect(screen.getByRole("group", { name: "Or try a sample" })).toBeInTheDocument();
   });
 
   it("accepts a PDF without text and rejects an oversized one", async () => {
@@ -86,15 +85,17 @@ describe("DocumentForm", () => {
     renderWithLocale(<DocumentForm busy={false} onSubmit={onSubmit} />);
     const select = screen.getByLabelText("Your state (optional)") as HTMLSelectElement;
     expect(select.value).toBe("");
-    await userEvent.selectOptions(screen.getByLabelText("Or try a sample"), "employment-offer");
+    await userEvent.click(screen.getByRole("button", { name: "Employment offer letter" }));
     expect(select.value).toBe("Maharashtra");
+    await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
+    expect(onSubmit).toHaveBeenLastCalledWith(expect.objectContaining({ state: "" }));
     expect(select).toHaveAccessibleDescription(
       "Guessed from the document (Pune). Change it if that is wrong.",
     );
 
     await userEvent.selectOptions(select, "Kerala");
     expect(select).not.toHaveAccessibleDescription(/Guessed/);
-    await userEvent.selectOptions(screen.getByLabelText("Or try a sample"), "rent-agreement");
+    await userEvent.click(screen.getByRole("button", { name: "Rent agreement" }));
     expect(select.value).toBe("Kerala");
     await userEvent.click(screen.getByRole("button", { name: "Explain this document" }));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ state: "Kerala" }));

@@ -13,10 +13,17 @@ const KIND_KEY: Record<ClauseChangeKind, TranslationKey> = {
 };
 
 const KIND_STYLE: Record<ClauseChangeKind, string> = {
-  unchanged: "bg-surface text-muted",
+  unchanged: "bg-surface-2 text-muted",
   modified: "bg-warn-bg text-warn-text",
   added: "bg-ok-bg text-ok-text",
   removed: "bg-danger-bg text-danger-text",
+};
+
+const KIND_EDGE: Record<ClauseChangeKind, string> = {
+  unchanged: "border-l-line",
+  modified: "border-l-warn-text",
+  added: "border-l-ok-text",
+  removed: "border-l-danger-text",
 };
 
 const SEVERITY_KEY: Record<ChangeExplanation["severity"], TranslationKey> = {
@@ -55,7 +62,10 @@ export function DiffView({ changes, explanations, summary }: DiffViewProps) {
       {nothingChanged ? <p>{t("compareNoChanges")}</p> : null}
       <ol className="flex flex-col gap-3">
         {changes.map((change, index) => (
-          <li key={index} className="rounded-md border border-line bg-surface p-3">
+          <li
+            key={index}
+            className={`rounded-lg border border-line border-l-4 bg-surface p-4 ${KIND_EDGE[change.kind]}`}
+          >
             <p className="mb-1 flex flex-wrap items-center gap-2">
               <span className={`rounded px-2 py-0.5 text-sm ${KIND_STYLE[change.kind]}`}>
                 {t(KIND_KEY[change.kind])}

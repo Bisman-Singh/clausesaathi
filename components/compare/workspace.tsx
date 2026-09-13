@@ -4,6 +4,7 @@ import { useId, useState, type FormEvent } from "react";
 import { DiffView } from "@/components/compare/diff-view";
 import { useLocale, useT } from "@/components/locale-provider";
 import { Alert } from "@/components/ui/alert";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CONTROL_CLASS, Field } from "@/components/ui/field";
 import { compare, errorKeyFor, type CompareResponse } from "@/lib/client/api";
@@ -49,34 +50,36 @@ export function CompareWorkspace() {
   return (
     <div className="flex flex-col gap-8">
       <section aria-labelledby="compare-heading" className="flex flex-col gap-4">
-        <h1 id="compare-heading" className="text-2xl font-bold">
+        <h1 id="compare-heading" className="text-3xl font-bold sm:text-4xl">
           {t("compareHeading")}
         </h1>
-        <p className="text-muted">{t("compareIntro")}</p>
-        <form onSubmit={handleSubmit} noValidate aria-busy={busy} className="flex flex-col gap-5">
-          <div className="grid gap-5 md:grid-cols-2">
-            <VersionField
-              id={`${id}-before`}
-              label={t("compareBeforeLabel")}
-              value={before}
-              onChange={setBefore}
-            />
-            <VersionField
-              id={`${id}-after`}
-              label={t("compareAfterLabel")}
-              value={after}
-              onChange={setAfter}
-            />
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button type="submit" disabled={busy}>
-              {busy ? t("compareSubmitting") : t("compareSubmit")}
-            </Button>
-            <Button type="button" variant="secondary" onClick={loadSample}>
-              {t("formSampleLabel")}
-            </Button>
-          </div>
-        </form>
+        <p className="max-w-2xl text-lg text-muted">{t("compareIntro")}</p>
+        <Card>
+          <form onSubmit={handleSubmit} noValidate aria-busy={busy} className="flex flex-col gap-5">
+            <div className="grid gap-5 md:grid-cols-2">
+              <VersionField
+                id={`${id}-before`}
+                label={t("compareBeforeLabel")}
+                value={before}
+                onChange={setBefore}
+              />
+              <VersionField
+                id={`${id}-after`}
+                label={t("compareAfterLabel")}
+                value={after}
+                onChange={setAfter}
+              />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button type="submit" disabled={busy}>
+                {busy ? t("compareSubmitting") : t("compareSubmit")}
+              </Button>
+              <Button type="button" variant="secondary" onClick={loadSample}>
+                {t("formSampleLabel")}
+              </Button>
+            </div>
+          </form>
+        </Card>
         {errorKey ? (
           <Alert tone="danger" role="alert">
             {t(errorKey)}

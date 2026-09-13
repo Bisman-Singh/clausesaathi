@@ -12,6 +12,12 @@ const SEVERITY_STYLE: Record<Severity, string> = {
   high: "bg-danger-bg text-danger-text",
 };
 
+const SEVERITY_EDGE: Record<Severity, string> = {
+  low: "border-l-info-text",
+  medium: "border-l-warn-text",
+  high: "border-l-danger-text",
+};
+
 const SEVERITY_KEY: Record<Severity, TranslationKey> = {
   low: "severityLow",
   medium: "severityMedium",
@@ -31,7 +37,7 @@ export function RiskList({ document, risks }: RiskListProps) {
       {risks.map((risk, index) => (
         <li
           key={`${risk.clauseId}-${index}`}
-          className="rounded-md border border-line bg-surface p-4"
+          className={`rounded-lg border border-line border-l-4 bg-surface p-4 ${SEVERITY_EDGE[risk.severity]}`}
         >
           <div className="flex flex-wrap items-center gap-2">
             <span

@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AnalysisView } from "@/components/analyze/analysis-view";
 import { DocumentForm, type DocumentFormValues } from "@/components/analyze/document-form";
+import { Hero } from "@/components/analyze/hero";
+import { ResultSkeleton } from "@/components/analyze/skeleton";
 import { useLocale, useT } from "@/components/locale-provider";
 import { Alert } from "@/components/ui/alert";
+import { Card } from "@/components/ui/card";
 import {
   readAnalysis,
   readAnalysisOnServer,
@@ -47,7 +50,7 @@ export function textFromClauses(response: AnalyzeResponse): string {
 
 const getSnapshot = () => readAnalysis(isStoredAnalysis);
 
-/** The home page: form on top, results below, focus moved to them on arrival. */
+/** The home page: hero, form card, then the result with focus moved to it on arrival. */
 export function AnalyzeWorkspace() {
   const t = useT();
   const { locale } = useLocale();
@@ -78,13 +81,20 @@ export function AnalyzeWorkspace() {
 
   return (
     <div className="flex flex-col gap-10">
+      <Hero />
       <section aria-labelledby="form-heading" className="flex flex-col gap-4">
-        <h1 id="form-heading" className="text-2xl font-bold">
+        <h2 id="form-heading" className="text-2xl font-bold">
           {t("formHeading")}
-        </h1>
-        <p className="text-muted">{t("tagline")}</p>
-        <DocumentForm busy={busy} onSubmit={handleSubmit} />
-        {busy ? <Alert>{t("formSubmitting")}</Alert> : null}
+        </h2>
+        <Card>
+          <DocumentForm busy={busy} onSubmit={handleSubmit} />
+        </Card>
+        {busy ? (
+          <>
+            <Alert>{t("formSubmitting")}</Alert>
+            <ResultSkeleton />
+          </>
+        ) : null}
         {errorKey ? (
           <Alert tone="danger" role="alert">
             {t(errorKey)}
