@@ -90,11 +90,25 @@ describe("createIndiaCodeClient", () => {
     expect(await client.search("anything")).toEqual([]);
   });
 
-  it("throws on a non-2xx response", async () => {
+  it("throws on a non-2xx response without echoing the search phrase", async () => {
     const client = createIndiaCodeClient(
       vi.fn<FetchLike>().mockResolvedValue(jsonResponse({}, 503)),
     );
-    await expect(client.search("x")).rejects.toThrow("IndiaCode responded 503");
+    const error = await client.search("tenant name secret").catch((e: unknown) => e);
+    expect(String(error)).toBe("Error: IndiaCode responded 503");
+  });
+
+  it("refuses bodies above the size cap, declared or actual", async () => {
+    const declared = new Response("{}", {
+      status: 200,
+      headers: { "content-type": "application/json", "content-length": String(2 * 1024 * 1024) },
+    });
+    const oversized = createIndiaCodeClient(vi.fn<FetchLike>().mockResolvedValue(declared));
+    await expect(oversized.search("x")).rejects.toThrow("IndiaCode response too large");
+
+    const actual = jsonResponse({ total: 0, results: [], pad: "x".repeat(1024 * 1024 + 1) });
+    const undeclared = createIndiaCodeClient(vi.fn<FetchLike>().mockResolvedValue(actual));
+    await expect(undeclared.search("y")).rejects.toThrow("IndiaCode response too large");
   });
 
   it("fetches a section, caches it and derives a url when missing", async () => {

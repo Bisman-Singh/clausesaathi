@@ -25,6 +25,8 @@ export function isIndiaCodeUrl(value: string): boolean {
 
 const indiaCodeUrl = z.string().refine(isIndiaCodeUrl, "not an IndiaCode link");
 const REQUEST_TIMEOUT_MS = 6_000;
+/** A search page or one section; anything larger is not what the API serves. */
+const MAX_RESPONSE_BYTES = 1024 * 1024;
 const CACHE_ENTRIES = 300;
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
@@ -82,15 +84,22 @@ export interface IndiaCodeClient {
   getSection(actId: string, number: string): Promise<StatuteSection | null>;
 }
 
+/**
+ * Fetch one JSON document with a deadline and a size cap. The error carries the
+ * status only: the URL holds the search phrase, which is derived from the
+ * document and must not reach the logs.
+ */
 async function fetchJson(fetchImpl: FetchLike, url: string): Promise<unknown> {
   const response = await fetchImpl(url, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
-  if (!response.ok) {
-    throw new Error(`IndiaCode responded ${response.status} for ${url}`);
-  }
-  return response.json();
+  if (!response.ok) throw new Error(`IndiaCode responded ${response.status}`);
+  const declared = Number(response.headers.get("content-length") ?? 0);
+  if (declared > MAX_RESPONSE_BYTES) throw new Error("IndiaCode response too large");
+  const body = await response.text();
+  if (body.length > MAX_RESPONSE_BYTES) throw new Error("IndiaCode response too large");
+  return JSON.parse(body);
 }
 
 function toHit(raw: z.infer<typeof searchHitSchema>): StatuteHit {
