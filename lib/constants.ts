@@ -17,6 +17,8 @@ export const LIMITS = {
   MAX_QUESTION_CHARS: 500,
   /** Most prior turns kept for Q&A context. */
   MAX_CHAT_MESSAGES: 12,
+  /** Most parts in one Q&A turn: text plus a handful of tool steps. */
+  MAX_CHAT_PARTS: 32,
   /** Most clauses a document is split into before merging the remainder. */
   MAX_CLAUSES: 250,
   /** Statute lookups performed per analysis. */

@@ -18,10 +18,15 @@ import { isIndianState } from "@/lib/statute/jurisdiction";
 
 export const maxDuration = 120;
 
-const partSchema = z.object({ type: z.string(), text: z.string().optional() });
+/** Part types, locales and states are short tokens; an answer is never longer than a document. */
+const MAX_TOKEN_CHARS = 64;
+const partSchema = z.object({
+  type: z.string().max(MAX_TOKEN_CHARS),
+  text: z.string().max(LIMITS.MAX_DOCUMENT_CHARS).optional(),
+});
 const messageSchema = z.object({
   role: z.enum(["user", "assistant"]),
-  parts: z.array(partSchema),
+  parts: z.array(partSchema).max(LIMITS.MAX_CHAT_PARTS),
 });
 const bodySchema = z.object({
   document: z.string().min(LIMITS.MIN_DOCUMENT_CHARS).max(LIMITS.MAX_DOCUMENT_CHARS),
@@ -30,8 +35,8 @@ const bodySchema = z.object({
     .min(1)
     .max(LIMITS.MAX_CHAT_MESSAGES)
     .refine((list) => list.at(-1)?.role === "user", "the last turn must be the user's"),
-  locale: z.string().optional(),
-  state: z.string().optional(),
+  locale: z.string().max(MAX_TOKEN_CHARS).optional(),
+  state: z.string().max(MAX_TOKEN_CHARS).optional(),
 });
 
 const MAX_BODY_BYTES = LIMITS.MAX_DOCUMENT_CHARS * 4 + LIMITS.MAX_CHAT_MESSAGES * 4096;

@@ -10,6 +10,7 @@ import {
 } from "@/lib/document/upload";
 import { HttpError, assertContentLength, readJson } from "@/lib/http/guard";
 import { toLocale } from "@/lib/i18n";
+import { isInjectionAttempt } from "@/lib/qa/guard";
 import { isIndianState, type IndianState } from "@/lib/statute/jurisdiction";
 import type { StateBasis } from "@/lib/statute/resolve";
 
@@ -33,16 +34,20 @@ export interface AnalyzeRequest {
   source: DocumentSource;
 }
 
-const jsonSchema = z.object({
-  text: z.string(),
-  situation: z.string().max(LIMITS.MAX_SITUATION_CHARS).default(""),
-  locale: z.string().optional(),
-  state: z.string().optional(),
-  stateBasis: z.string().optional(),
-});
-
 /** JSON bodies may carry the whole document plus a little metadata. */
 const MAX_JSON_BYTES = LIMITS.MAX_DOCUMENT_CHARS * 4 + 4096;
+/** Locale, state and basis are short tokens; anything longer is not one of ours. */
+const MAX_TOKEN_CHARS = 64;
+
+const jsonSchema = z.object({
+  // Length is judged by `validateText`, which reports too_short and too_long; this bound only
+  // keeps the parser honest, since the body cap already holds the text below it.
+  text: z.string().max(MAX_JSON_BYTES),
+  situation: z.string().max(LIMITS.MAX_SITUATION_CHARS).default(""),
+  locale: z.string().max(MAX_TOKEN_CHARS).optional(),
+  state: z.string().max(MAX_TOKEN_CHARS).optional(),
+  stateBasis: z.string().max(MAX_TOKEN_CHARS).optional(),
+});
 /** Multipart bodies carry the file plus a little metadata. */
 const MAX_MULTIPART_BYTES = LIMITS.MAX_UPLOAD_BYTES + 8192;
 
@@ -56,7 +61,7 @@ export async function readAnalyzeRequest(
     : { ...(await readJson(request, jsonSchema, MAX_JSON_BYTES)), source: "text" as const };
   return {
     text: validateText(raw.text),
-    situation: raw.situation.trim().slice(0, LIMITS.MAX_SITUATION_CHARS),
+    situation: screenSituation(raw.situation),
     locale: toLocale(raw.locale),
     state: raw.state && isIndianState(raw.state) ? raw.state : null,
     stateBasis: toStateBasis(raw.stateBasis),
@@ -121,6 +126,16 @@ function toStateBasis(value: string | undefined): StateBasis {
 function stringField(form: FormData, name: string): string {
   const value = form.get(name);
   return typeof value === "string" ? value : "";
+}
+
+/**
+ * The situation is quoted straight into the prompt, so text that addresses
+ * the assistant rather than describing the user is dropped: the document
+ * still gets analysed, just evenly, as if nothing had been said.
+ */
+function screenSituation(situation: string): string {
+  const trimmed = situation.trim().slice(0, LIMITS.MAX_SITUATION_CHARS);
+  return isInjectionAttempt(trimmed) ? "" : trimmed;
 }
 
 function validateText(text: string): string {
