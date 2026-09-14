@@ -252,6 +252,13 @@ describe("POST /api/analyze", () => {
     expect(generate).toHaveBeenCalledTimes(2);
   });
 
+  it("rejects a body with fields it does not know", async () => {
+    setServerDeps(fakeDeps(vi.fn()));
+    const response = await POST(jsonPost("/api/analyze", { text: SAMPLE_TEXT, debug: true }));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: "invalid_request" });
+  });
+
   it("drops a situation that addresses the assistant and analyses the document evenly", async () => {
     const generate = vi.fn(async () => ({ output: brief }));
     setServerDeps(fakeDeps(generate));

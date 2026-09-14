@@ -87,6 +87,10 @@ describe("POST /api/compare", () => {
       jsonPost("/api/compare", { before: " ".repeat(100), after: RENT_AGREEMENT_V2 }),
     );
     await expect(blank.json()).resolves.toMatchObject({ error: "too_short" });
+    const unknown = await POST(
+      jsonPost("/api/compare", { before: RENT_AGREEMENT_V2, after: RENT_AGREEMENT_V2, extra: 1 }),
+    );
+    await expect(unknown.json()).resolves.toMatchObject({ error: "invalid_request" });
   });
 });
 

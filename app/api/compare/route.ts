@@ -10,10 +10,11 @@ import { aiRateLimiter, serverDeps } from "@/lib/server/deps";
 
 export const maxDuration = 120;
 
-const bodySchema = z.object({
+/** Unknown fields are rejected outright: the client sends exactly these three. */
+const bodySchema = z.strictObject({
   before: z.string().min(LIMITS.MIN_DOCUMENT_CHARS).max(LIMITS.MAX_DOCUMENT_CHARS),
   after: z.string().min(LIMITS.MIN_DOCUMENT_CHARS).max(LIMITS.MAX_DOCUMENT_CHARS),
-  locale: z.string().optional(),
+  locale: z.string().max(64).optional(),
 });
 
 const MAX_BODY_BYTES = LIMITS.MAX_DOCUMENT_CHARS * 8 + 4096;

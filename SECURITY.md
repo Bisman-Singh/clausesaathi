@@ -31,7 +31,11 @@ quota, and the usual web application classes (XSS, clickjacking, CSRF).
   bytes are read or sent to a model. PDF parsing has a 15 s deadline so a
   crafted file cannot hold a request open.
 - Every body is validated with Zod; every string carries a maximum length;
-  unknown shapes are rejected with 400.
+  the analyse and compare schemas are strict, so a body with an unknown field
+  is rejected with 400 (the Q&A body carries the AI SDK transport's own
+  fields, so it is bounded rather than strict).
+- Modules that read provider keys import `server-only`, so a Client Component
+  that ever imported them would fail the build rather than ship the keys.
 - Sliding-window rate limit per client address on all AI-backed routes (429),
   with the address table itself capped so a flood of fresh addresses cannot
   grow memory.
@@ -88,8 +92,9 @@ chat turns of at most 32 parts; 250 clauses; 6 statute lookups per analysis;
 
 - Every dependency is pinned to an exact version in `package.json` and the
   lockfile is installed with `npm ci`; GitHub Actions are pinned to commit SHAs.
-- `npm audit --audit-level=high` and CodeQL (`security-and-quality` queries)
-  run in CI on every push; Dependabot proposes weekly npm and Actions updates.
+- `npm audit --audit-level=high`, CodeQL (`security-and-quality` queries) and
+  a Gitleaks scan of the full history run in CI on every push; Dependabot
+  proposes weekly minor and patch updates for npm and Actions.
 - `/.well-known/security.txt` (RFC 9116) points reporters at the private
   advisory form.
 

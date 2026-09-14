@@ -1,3 +1,5 @@
+// The build fails if a Client Component ever imports this module and its keys.
+import "server-only";
 import { createGoogle } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";

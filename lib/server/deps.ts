@@ -1,3 +1,4 @@
+import "server-only";
 import { createModelFactory, envFromProcess } from "@/lib/ai/client";
 import { createAnalysisCache } from "@/lib/analysis/cache";
 import type { AnalyzeDeps } from "@/lib/analysis/analyze";

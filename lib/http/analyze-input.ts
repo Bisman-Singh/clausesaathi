@@ -39,7 +39,8 @@ const MAX_JSON_BYTES = LIMITS.MAX_DOCUMENT_CHARS * 4 + 4096;
 /** Locale, state and basis are short tokens; anything longer is not one of ours. */
 const MAX_TOKEN_CHARS = 64;
 
-const jsonSchema = z.object({
+/** Unknown fields are rejected outright: the client sends exactly these five. */
+const jsonSchema = z.strictObject({
   // Length is judged by `validateText`, which reports too_short and too_long; this bound only
   // keeps the parser honest, since the body cap already holds the text below it.
   text: z.string().max(MAX_JSON_BYTES),

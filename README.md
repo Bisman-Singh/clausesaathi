@@ -105,7 +105,7 @@ The full threat model and control list is in `SECURITY.md`. The short version:
   commit SHAs, `npm audit`, CodeQL and Dependabot in CI, and
   `/.well-known/security.txt` for reporters.
 
-## Performance
+## Efficiency
 
 - **One model call per analysis**, structured output with a token cap, and a
   100 s request deadline across the provider chain so a stalled model never
@@ -125,19 +125,82 @@ The full threat model and control list is in `SECURITY.md`. The short version:
   behind typing with `useDeferredValue`, and the home page ships about 180 KB
   of JavaScript: Lighthouse 96 performance, 100 accessibility, 100 best
   practices, 100 SEO on production.
-- **Memory is bounded** everywhere something is kept: the two LRU caches, the
+- **Memory is bounded** everywhere something is kept: the three LRU caches, the
   rate limiter's address table, and the input caps in `lib/constants.ts`.
+- **Complexity is bounded too.** Segmentation is one linear pass over the text
+  with a hard cap of 250 clauses. Compare mode aligns clauses with bigram
+  profiles computed once per clause, so matching is O(before × after) over at
+  most 250 × 250 small maps, and the word-level diff runs only on pairs of at
+  most 600 words. State detection is a fixed set of anchored patterns over the
+  text. Nothing in the request path is worse than quadratic in a capped input.
 
-## Judging criteria, and where to verify each
+## Judging criteria
 
-| Criterion                       | How it is addressed                                                                                                                                                                                      | Look at                                                                   |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| **Problem statement alignment** | All seven listed use cases in one product, plus legal-aid eligibility; information-not-advice built into prompts, UI copy and the boundary of what is shown                                              | table above, `lib/analysis/prompts.ts`, `lib/legal-aid/`                  |
-| **Code quality**                | Strict TypeScript (`noUncheckedIndexedAccess`), ESLint with complexity ≤10, ≤80 lines per function, no `any`, no non-null assertions; small single-purpose modules with doc comments; Prettier-formatted | `tsconfig.json`, `eslint.config.mjs`, `ARCHITECTURE.md`                   |
-| **Security**                    | Nonce CSP with `strict-dynamic`, HSTS and the other hardening headers, same-origin checks, body caps, magic-byte file typing, bounded Zod schemas, rate limiting, injection screens, pinned supply chain | "Security" above, `SECURITY.md`, `proxy.ts`, `lib/http/`, `lib/qa/`       |
-| **Efficiency**                  | One model call per analysis with output caps and a deadline; parallel, cached, capped statute lookups; hashed result cache; deterministic segmentation, diff and dates; lazy Q&A chunk; bounded memory   | "Performance" above, `lib/analysis/`, `lib/cache/`, `lib/ai/client.ts`    |
-| **Testing**                     | 285 tests, **100% statements, branches, functions and lines across the whole repository** (routes, components, library, proxy), enforced in CI; opt-in live test against real Gemini and IndiaCode       | `TESTING.md`, `tests/`, `vitest.config.mts`                               |
-| **Accessibility**               | WCAG 2.2 AA: keyboard-only flows, skip link, labelled controls with announced errors, live regions, focus management, 4.5:1 contrast in both schemes, reduced motion, `lang` switching, axe tests        | `ACCESSIBILITY.md`, `app/globals.css`, `components/`, `tests/components/` |
+One subsection per criterion, each with the evidence and where to check it.
+
+### Code Quality
+
+- Strict TypeScript with `noUncheckedIndexedAccess`; no `any`, no non-null
+  assertions (`tsconfig.json`).
+- ESLint enforces cyclomatic complexity ≤ 10 and ≤ 80 lines per function;
+  Prettier formatting is checked in CI (`eslint.config.mjs`).
+- Small single-purpose modules with a doc comment at the top of each, and a
+  written architecture with the design decisions and their reasons
+  (`ARCHITECTURE.md`).
+- Conventional one-line commits, CI on every push, no generated files tracked.
+
+### Security
+
+- Threat model, controls and accepted risks written down (`SECURITY.md`).
+- Nonce CSP with `strict-dynamic`, HSTS, COOP, CORP, frame denial and a
+  minimal `Permissions-Policy` (`proxy.ts`, `next.config.ts`).
+- Same-origin checks, body caps, magic-byte file typing, strict bounded Zod
+  schemas, rate limiting, `no-store` responses (`lib/http/`).
+- Prompt-injection screens on the situation field and Q&A, a separate topic
+  gate, delimited document data, citation checks (`lib/qa/`).
+- Exact dependency pins, SHA-pinned Actions, `npm audit`, CodeQL, Gitleaks
+  and Dependabot in CI; `server-only` on key-holding modules;
+  `/.well-known/security.txt`.
+
+### Efficiency
+
+- One structured model call per analysis, with a token cap and a 100 s
+  deadline across the fallback chain (`lib/ai/client.ts`).
+- Parallel statute lookups with timeouts, size caps and an LRU cache;
+  hashed result and topic-gate caches (`lib/analysis/`, `lib/cache/`).
+- Deterministic segmentation, citation verification, diff and date arithmetic
+  with stated complexity bounds (section above).
+- Lazy-loaded Q&A chunk, browser-side image shrinking, deferred state
+  detection; Lighthouse 96 / 100 / 100 / 100 on production.
+
+### Testing
+
+- 285 tests: unit, API route, component with axe, and an opt-in live suite
+  against real Gemini and IndiaCode (`tests/`, `TESTING.md`).
+- 100% statements, branches, functions and lines over the whole repository,
+  enforced as a CI threshold, no file excluded (`vitest.config.mts`).
+- Deterministic by construction: the AI SDK mock model, injected fetch and
+  clock, and a generated PDF fixture instead of binaries.
+
+### Accessibility
+
+- WCAG 2.2 AA: keyboard-only flows, skip link, labelled controls with
+  announced errors, live regions, focus management after navigation
+  (`ACCESSIBILITY.md`).
+- 4.5:1 contrast in light and dark schemes, reduced-motion support, `lang`
+  switching for Hindi, print styles for "Save as PDF" (`app/globals.css`).
+- Every page and result view passes axe in the component tests
+  (`tests/components/`).
+
+### Problem Statement Alignment
+
+- All seven use cases in the brief in one product, plus legal-aid eligibility
+  under Section 12 of the LSA Act 1987 (table at the top, `lib/legal-aid/`).
+- Information, not advice: built into the prompts, the UI copy and the
+  boundary of what is shown; every claim traceable to a clause or a statute
+  (`lib/analysis/prompts.ts`).
+- English and Hindi, scans and photos, state-aware law: built for the people
+  the challenge names, not only for clean English PDFs.
 
 ## Getting started
 
