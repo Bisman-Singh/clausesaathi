@@ -70,6 +70,13 @@ produces content or fails, a failure before any content moves to the next
 model, and the client sees one answer from its first chunk
 (`lib/qa/stream.ts`).
 
+**One cache shape, two homes.** The statute cache, the topic-gate cache and
+the rate limiter sit behind small interfaces (`lib/cache/store.ts`,
+`lib/http/rate-limit.ts`). With Upstash Redis configured they are shared by
+every serverless instance; without it they are per instance and nothing else
+changes. Redis holds only public or derived data (law text, counters, hashed
+verdicts); the brief cache stays in memory on purpose.
+
 **No database, no accounts.** A document is processed in memory for one request.
 The browser keeps the last result in session storage through a small external
 store read with `useSyncExternalStore`, which avoids hydration mismatches and
@@ -115,6 +122,6 @@ milliseconds.
 - Scans and photos are transcribed by the model, not by a dedicated OCR engine.
   The result is labelled as a transcription and the user is told to check
   names, amounts and dates against the original.
-- The rate limiter is per serverless instance. See `SECURITY.md`.
+- Without Redis the rate limiter is per serverless instance. See `SECURITY.md`.
 - IndiaCode covers legislation, not case law. The app never claims otherwise.
 - Hindi output quality depends on the model; the interface strings are reviewed.

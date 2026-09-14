@@ -50,7 +50,7 @@ const MAX_BODY_BYTES = LIMITS.MAX_DOCUMENT_CHARS * 4 + LIMITS.MAX_CHAT_MESSAGES 
  */
 export async function POST(request: Request): Promise<Response> {
   try {
-    guardAiRequest(request, aiRateLimiter);
+    await guardAiRequest(request, aiRateLimiter);
     const body = await readJson(request, bodySchema, MAX_BODY_BYTES);
     const deps = serverDeps();
     const chain = modelChain(deps.env);

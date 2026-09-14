@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LruCache } from "@/lib/cache/lru";
+import { memoryStore, type CacheStore } from "@/lib/cache/store";
 import { INDIACODE_BASE_URL } from "@/lib/statute/urls";
 
 /**
@@ -112,15 +112,28 @@ function toHit(raw: z.infer<typeof searchHitSchema>): StatuteHit {
   };
 }
 
-/** Create a client. `fetchImpl` is injectable so tests never touch the network. */
-export function createIndiaCodeClient(fetchImpl: FetchLike = fetch): IndiaCodeClient {
-  const searchCache = new LruCache<StatuteHit[]>(CACHE_ENTRIES, CACHE_TTL_MS);
-  const sectionCache = new LruCache<StatuteSection | null>(CACHE_ENTRIES, CACHE_TTL_MS);
+/** Where search results and sections are remembered; in memory unless a shared store is given. */
+export interface IndiaCodeStores {
+  search: CacheStore<StatuteHit[]>;
+  section: CacheStore<StatuteSection | null>;
+}
 
+export function memoryIndiaCodeStores(): IndiaCodeStores {
+  return {
+    search: memoryStore(CACHE_ENTRIES, CACHE_TTL_MS),
+    section: memoryStore(CACHE_ENTRIES, CACHE_TTL_MS),
+  };
+}
+
+/** Create a client. `fetchImpl` and the stores are injectable so tests never touch the network. */
+export function createIndiaCodeClient(
+  fetchImpl: FetchLike = fetch,
+  stores: IndiaCodeStores = memoryIndiaCodeStores(),
+): IndiaCodeClient {
   return {
     async search(query, limit = 3) {
       const key = `${limit}:${query.trim().toLowerCase()}`;
-      const cached = searchCache.get(key);
+      const cached = await stores.search.get(key);
       if (cached) return cached;
       const params = new URLSearchParams({
         q: query.trim(),
@@ -131,18 +144,18 @@ export function createIndiaCodeClient(fetchImpl: FetchLike = fetch): IndiaCodeCl
         await fetchJson(fetchImpl, `${INDIACODE_BASE_URL}/api/v1/search?${params}`),
       );
       const hits = parsed.success ? parsed.data.results.map(toHit) : [];
-      searchCache.set(key, hits);
+      await stores.search.set(key, hits);
       return hits;
     },
 
     async getSection(actId, number) {
       const key = `${actId}/${number}`;
-      const cached = sectionCache.get(key);
+      const cached = await stores.section.get(key);
       if (cached !== undefined) return cached;
       const url = `${INDIACODE_BASE_URL}/api/v1/${encodeURIComponent(actId)}/section/${encodeURIComponent(number)}`;
       const parsed = sectionResponseSchema.safeParse(await fetchJson(fetchImpl, url));
       const section = parsed.success ? toSection(parsed.data) : null;
-      sectionCache.set(key, section);
+      await stores.section.set(key, section);
       return section;
     },
   };

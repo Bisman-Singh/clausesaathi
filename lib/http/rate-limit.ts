@@ -1,16 +1,23 @@
 /**
  * Sliding-window rate limiter kept in process memory.
  *
- * Each serverless instance keeps its own window, which is enough to blunt a
- * single abusive client without any shared store. Documented as a known
- * limitation in SECURITY.md.
+ * The fallback for a deployment without Redis: each serverless instance keeps
+ * its own window, which blunts a single abusive client without any shared
+ * store. With Redis configured, `SharedRateLimiter` takes its place.
  */
+
+/** What every route needs from a limiter, whichever home it has. */
+export interface RequestLimiter {
+  allow(key: string): boolean | Promise<boolean>;
+  reset(): void;
+}
+
 /** How many allowed hits go by between sweeps of idle keys. */
 const PRUNE_EVERY = 100;
 /** Addresses tracked at once; a flood of fresh addresses evicts the oldest rather than growing memory. */
 const MAX_KEYS = 10_000;
 
-export class RateLimiter {
+export class RateLimiter implements RequestLimiter {
   private readonly hits = new Map<string, number[]>();
   private sinceLastPrune = 0;
 

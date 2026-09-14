@@ -1,12 +1,12 @@
 import { AiUnavailableError } from "@/lib/ai/client";
 import { PdfError } from "@/lib/document/pdf";
 import { HttpError, assertSameOrigin, clientAddress } from "@/lib/http/guard";
-import type { RateLimiter } from "@/lib/http/rate-limit";
+import type { RequestLimiter } from "@/lib/http/rate-limit";
 
 /** Checks every AI-backed route runs before doing any work. */
-export function guardAiRequest(request: Request, limiter: RateLimiter): void {
+export async function guardAiRequest(request: Request, limiter: RequestLimiter): Promise<void> {
   assertSameOrigin(request);
-  if (!limiter.allow(clientAddress(request))) {
+  if (!(await limiter.allow(clientAddress(request)))) {
     throw new HttpError(429, "rate_limited", "Too many requests. Please wait a minute.");
   }
 }

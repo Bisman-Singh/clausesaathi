@@ -3,7 +3,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { withModelFallback, type ModelFactory } from "@/lib/ai/client";
 import { modelChain, type ModelEnv } from "@/lib/ai/models";
-import type { LruCache } from "@/lib/cache/lru";
+import type { CacheStore } from "@/lib/cache/store";
 import type { Locale } from "@/lib/constants";
 import type { ParsedDocument } from "@/lib/document/types";
 
@@ -31,7 +31,7 @@ export interface GateDeps {
   env: ModelEnv;
   generate?: typeof generateText;
   /** Verdicts by document and question, so a repeated question skips the model call. */
-  cache?: LruCache<boolean>;
+  cache?: CacheStore<boolean>;
 }
 
 /** A hash rather than the text, so the cache holds nothing anyone could read back. */
@@ -76,7 +76,7 @@ export async function isOnTopic(
 ): Promise<boolean> {
   const generate = deps.generate ?? generateText;
   const key = gateKey(document, question);
-  const remembered = deps.cache?.get(key);
+  const remembered = await deps.cache?.get(key);
   if (remembered !== undefined) return remembered;
   try {
     const { value } = await withModelFallback(
@@ -95,7 +95,7 @@ export async function isOnTopic(
       },
       { chain: gateChain(deps.env), timeoutMs: GATE_TIMEOUT_MS },
     );
-    deps.cache?.set(key, value.onTopic);
+    await deps.cache?.set(key, value.onTopic);
     return value.onTopic;
   } catch {
     // The answering model still has its own instructions; an outage here must not block every question.

@@ -87,8 +87,9 @@ The full threat model and control list is in `SECURITY.md`. The short version:
   for this origin only (`proxy.ts`, `next.config.ts`).
 - **Every API route** checks `Sec-Fetch-Site` (with an `Origin`/`Host`
   fallback), caps the declared and actual body size before parsing, validates
-  the body with Zod where every string is bounded, and rate-limits per client
-  address (`lib/http/`). Uploads are typed by magic bytes, not by the declared
+  the body with strict, bounded Zod schemas, and rate-limits per client
+  address with a sliding window shared across instances through Upstash Redis
+  (`lib/http/`). Uploads are typed by magic bytes, not by the declared
   MIME type (`lib/document/upload.ts`); PDFs are capped by size, page count and
   parse time (`lib/document/pdf.ts`).
 - **The model is boxed in.** Document text and the user's situation are data,
@@ -115,7 +116,8 @@ The full threat model and control list is in `SECURITY.md`. The short version:
   runs in milliseconds (`lib/document/segment.ts`, `lib/compare/diff.ts`).
 - **Statutes are fetched in parallel** across the risks and across the three
   query phrasings per risk, each with a 6 s timeout and a 1 MB cap, behind an
-  hour-long LRU cache (`lib/analysis/statutes.ts`, `lib/cache/lru.ts`).
+  hour-long cache shared across instances through Redis, with an in-memory
+  LRU when Redis is absent (`lib/analysis/statutes.ts`, `lib/cache/store.ts`).
 - **Results are cached** by a SHA-256 of the text, situation, locale and state
   for an hour, so the samples and repeated documents cost nothing
   (`lib/analysis/cache.ts`); topic-gate verdicts are cached the same way, so a
@@ -155,7 +157,8 @@ One subsection per criterion, each with the evidence and where to check it.
 - Nonce CSP with `strict-dynamic`, HSTS, COOP, CORP, frame denial and a
   minimal `Permissions-Policy` (`proxy.ts`, `next.config.ts`).
 - Same-origin checks, body caps, magic-byte file typing, strict bounded Zod
-  schemas, rate limiting, `no-store` responses (`lib/http/`).
+  schemas, shared sliding-window rate limiting, `no-store` responses
+  (`lib/http/`).
 - Prompt-injection screens on the situation field and Q&A, a separate topic
   gate, delimited document data, citation checks (`lib/qa/`).
 - Exact dependency pins, SHA-pinned Actions, `npm audit`, CodeQL, Gitleaks
@@ -166,7 +169,7 @@ One subsection per criterion, each with the evidence and where to check it.
 
 - One structured model call per analysis, with a token cap and a 100 s
   deadline across the fallback chain (`lib/ai/client.ts`).
-- Parallel statute lookups with timeouts, size caps and an LRU cache;
+- Parallel statute lookups with timeouts, size caps and a Redis-shared cache;
   hashed result and topic-gate caches (`lib/analysis/`, `lib/cache/`).
 - Deterministic segmentation, citation verification, diff and date arithmetic
   with stated complexity bounds (section above).
@@ -175,7 +178,7 @@ One subsection per criterion, each with the evidence and where to check it.
 
 ### Testing
 
-- 285 tests: unit, API route, component with axe, and an opt-in live suite
+- 295 tests: unit, API route, component with axe, and an opt-in live suite
   against real Gemini and IndiaCode (`tests/`, `TESTING.md`).
 - 100% statements, branches, functions and lines over the whole repository,
   enforced as a CI threshold, no file excluded (`vitest.config.mts`).
@@ -224,7 +227,7 @@ LIVE_AI=1 npm test -- tests/live
 ## Tech stack
 
 Next.js 16 (App Router), React 19, TypeScript, Vercel AI SDK with the Google
-provider, Zod, Tailwind CSS v4, unpdf for PDF text, Gemini vision for scans and
+provider, Zod, Tailwind CSS v4, Upstash Redis for shared limits and caches, unpdf for PDF text, Gemini vision for scans and
 photos, Vitest with Testing Library
 and axe. Deployed on Vercel.
 

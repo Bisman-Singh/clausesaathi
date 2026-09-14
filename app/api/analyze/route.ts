@@ -21,7 +21,7 @@ export const maxDuration = 120;
  */
 export async function POST(request: Request): Promise<Response> {
   try {
-    guardAiRequest(request, aiRateLimiter);
+    await guardAiRequest(request, aiRateLimiter);
     const deps = serverDeps();
     const input = await readAnalyzeRequest(request, deps);
     const document = segmentDocument(input.text);

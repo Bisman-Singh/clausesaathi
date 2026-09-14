@@ -39,6 +39,8 @@
     "@ai-sdk/google": "4.0.69",
     "@ai-sdk/openai": "4.0.66",
     "@ai-sdk/react": "4.0.102",
+    "@upstash/ratelimit": "2.1.0",
+    "@upstash/redis": "1.38.4",
     "ai": "7.0.99",
     "next": "16.3.5",
     "react": "19.3.0",

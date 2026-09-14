@@ -36,9 +36,11 @@ quota, and the usual web application classes (XSS, clickjacking, CSRF).
   fields, so it is bounded rather than strict).
 - Modules that read provider keys import `server-only`, so a Client Component
   that ever imported them would fail the build rather than ship the keys.
-- Sliding-window rate limit per client address on all AI-backed routes (429),
-  with the address table itself capped so a flood of fresh addresses cannot
-  grow memory.
+- Sliding-window rate limit per client address on all AI-backed routes (429).
+  With Upstash Redis configured the window is shared by every instance
+  (`lib/http/shared-rate-limit.ts`); without it each instance keeps its own,
+  with the address table capped so a flood of fresh addresses cannot grow
+  memory (`lib/http/rate-limit.ts`).
 - Errors map to stable codes; internal messages never reach the client.
 - Every `/api/*` response is sent with `Cache-Control: no-store`, so no
   shared cache or proxy keeps a copy of a brief or an answer.
@@ -78,6 +80,10 @@ chat turns of at most 32 parts; 250 clauses; 6 statute lookups per analysis;
 
 - No database, no server-side storage, no logging of document content. Only
   short statute search phrases leave the process apart from the model call.
+- The shared Redis holds three kinds of key and nothing else: rate-limit
+  counters by client address, public statute text by search phrase, and
+  yes/no topic-gate verdicts by hash. The brief cache stays in memory because
+  its entries derive from the user's document.
 - Secrets live in environment variables; `.env*` is git-ignored and
   `.env.example` documents the names only.
 
@@ -100,8 +106,10 @@ chat turns of at most 32 parts; 250 clauses; 6 statute lookups per analysis;
 
 ## Known limitations and accepted risks
 
-- The rate limiter is in-process. On a multi-instance deployment each instance
-  has its own window. A shared store would be the next step.
+- Without Redis the rate limiter is in-process and each instance has its own
+  window; production runs with Redis. If Redis is unreachable the limiter
+  lets requests through and the caches miss, so an outage there degrades to
+  slower, not failed, requests.
 - Same-origin checks depend on browser-sent headers; non-browser clients that
   forge them are limited only by the rate limiter and input caps.
 - There is no sign-in by design: nothing is stored, so there is nothing to

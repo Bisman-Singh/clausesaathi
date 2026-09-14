@@ -4,6 +4,7 @@ import { PdfError } from "@/lib/document/pdf";
 import { guardAiRequest, toHttpError } from "@/lib/http/ai-request";
 import { HttpError } from "@/lib/http/guard";
 import { RateLimiter } from "@/lib/http/rate-limit";
+import { SharedRateLimiter } from "@/lib/http/shared-rate-limit";
 
 const request = () =>
   new Request("https://app.example/api/x", {
@@ -12,15 +13,19 @@ const request = () =>
   });
 
 describe("guardAiRequest", () => {
-  it("lets requests through until the limiter refuses", () => {
+  it("lets requests through until the limiter refuses", async () => {
     const limiter = new RateLimiter(1, 60_000, () => 0);
-    expect(() => guardAiRequest(request(), limiter)).not.toThrow();
-    expect(() => guardAiRequest(request(), limiter)).toThrow(HttpError);
-    try {
-      guardAiRequest(request(), limiter);
-    } catch (error) {
-      expect((error as HttpError).status).toBe(429);
-    }
+    await expect(guardAiRequest(request(), limiter)).resolves.toBeUndefined();
+    await expect(guardAiRequest(request(), limiter)).rejects.toThrow(HttpError);
+    const error = await guardAiRequest(request(), limiter).catch((e: unknown) => e);
+    expect((error as HttpError).status).toBe(429);
+  });
+
+  it("works the same over a shared limiter", async () => {
+    let calls = 0;
+    const limiter = new SharedRateLimiter({ limit: async () => ({ success: calls++ === 0 }) });
+    await expect(guardAiRequest(request(), limiter)).resolves.toBeUndefined();
+    await expect(guardAiRequest(request(), limiter)).rejects.toMatchObject({ status: 429 });
   });
 });
 

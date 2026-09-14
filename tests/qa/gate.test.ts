@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LanguageModel } from "ai";
 import { segmentDocument } from "@/lib/document/segment";
-import { LruCache } from "@/lib/cache/lru";
+import { memoryStore } from "@/lib/cache/store";
 import { gateChain, gateKey, gatePrompt, isOnTopic } from "@/lib/qa/gate";
 
 const document = segmentDocument(
@@ -51,7 +51,7 @@ describe("isOnTopic", () => {
   });
 
   it("remembers a verdict per document and question, but never a fail-open one", async () => {
-    const cache = new LruCache<boolean>(10, 60_000);
+    const cache = memoryStore<boolean>(10, 60_000);
     const generate = vi.fn(async () => ({ output: { onTopic: false, reason: "weather" } }));
     const withCache = { ...deps(generate), cache };
     expect(await isOnTopic(document, "Will it rain?", "en", withCache)).toBe(false);
@@ -64,7 +64,7 @@ describe("isOnTopic", () => {
     );
 
     const down = vi.fn(async () => Promise.reject(new Error("down")));
-    const outage = { ...deps(down), cache: new LruCache<boolean>(10, 60_000) };
+    const outage = { ...deps(down), cache: memoryStore<boolean>(10, 60_000) };
     expect(await isOnTopic(document, "Notice?", "en", outage)).toBe(true);
     const attemptsPerQuestion = down.mock.calls.length;
     expect(await isOnTopic(document, "Notice?", "en", outage)).toBe(true);

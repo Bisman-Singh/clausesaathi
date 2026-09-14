@@ -27,7 +27,7 @@ const MAX_BODY_BYTES = LIMITS.MAX_DOCUMENT_CHARS * 8 + 4096;
  */
 export async function POST(request: Request): Promise<Response> {
   try {
-    guardAiRequest(request, aiRateLimiter);
+    await guardAiRequest(request, aiRateLimiter);
     const body = await readJson(request, bodySchema, MAX_BODY_BYTES);
     const before = segmentDocument(body.before);
     const after = segmentDocument(body.after);
