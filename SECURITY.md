@@ -69,8 +69,12 @@ quota, and the usual web application classes (XSS, clickjacking, CSRF).
 
 **Supply chain**
 
-- Exact dependency versions, `npm audit --audit-level=high` and CodeQL run in CI
-  on every push.
+- Every dependency is pinned to an exact version in `package.json` and the
+  lockfile is installed with `npm ci`; GitHub Actions are pinned to commit SHAs.
+- `npm audit --audit-level=high` and CodeQL (`security-and-quality` queries)
+  run in CI on every push; Dependabot proposes weekly npm and Actions updates.
+- `/.well-known/security.txt` (RFC 9116) points reporters at the private
+  advisory form.
 
 ## Known limitations
 
