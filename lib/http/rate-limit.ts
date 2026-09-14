@@ -7,6 +7,8 @@
  */
 /** How many allowed hits go by between sweeps of idle keys. */
 const PRUNE_EVERY = 100;
+/** Addresses tracked at once; a flood of fresh addresses evicts the oldest rather than growing memory. */
+const MAX_KEYS = 10_000;
 
 export class RateLimiter {
   private readonly hits = new Map<string, number[]>();
@@ -16,6 +18,7 @@ export class RateLimiter {
     private readonly limit: number,
     private readonly windowMs: number,
     private readonly now: () => number = Date.now,
+    private readonly maxKeys: number = MAX_KEYS,
   ) {}
 
   /** Record a hit and report whether the caller is still within the limit. */
@@ -27,9 +30,21 @@ export class RateLimiter {
       return false;
     }
     recent.push(this.now());
+    this.makeRoom(key, cutoff);
     this.hits.set(key, recent);
     this.prune(cutoff);
     return true;
+  }
+
+  /** Before a new key goes in at the cap, sweep idle keys; if none were idle, drop the oldest. */
+  private makeRoom(key: string, cutoff: number): void {
+    if (this.hits.has(key) || this.hits.size < this.maxKeys) return;
+    this.sweep(cutoff);
+    if (this.hits.size < this.maxKeys) return;
+    for (const oldest of this.hits.keys()) {
+      this.hits.delete(oldest);
+      break;
+    }
   }
 
   /** How many addresses are being tracked right now. */
@@ -47,6 +62,10 @@ export class RateLimiter {
     this.sinceLastPrune += 1;
     if (this.sinceLastPrune < PRUNE_EVERY) return;
     this.sinceLastPrune = 0;
+    this.sweep(cutoff);
+  }
+
+  private sweep(cutoff: number): void {
     for (const [key, times] of this.hits) {
       if (times.every((at) => at <= cutoff)) this.hits.delete(key);
     }

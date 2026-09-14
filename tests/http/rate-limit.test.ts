@@ -25,6 +25,25 @@ describe("RateLimiter", () => {
     expect(limiter.allow("old1")).toBe(true);
   });
 
+  it("caps the number of tracked addresses, evicting idle keys first and then the oldest", () => {
+    let now = 0;
+    const limiter = new RateLimiter(5, 10, () => now, 3);
+    limiter.allow("a");
+    limiter.allow("b");
+    limiter.allow("c");
+    expect(limiter.allow("a")).toBe(true);
+    expect(limiter.size).toBe(3);
+    // All three are live, so the oldest, "a", makes room for "d".
+    expect(limiter.allow("d")).toBe(true);
+    expect(limiter.size).toBe(3);
+    expect([...Array(5)].map(() => limiter.allow("a"))).toEqual([true, true, true, true, true]);
+    // Once the window has passed, the sweep frees space without touching live keys.
+    now = 100;
+    limiter.allow("e");
+    expect(limiter.allow("f")).toBe(true);
+    expect(limiter.size).toBe(2);
+  });
+
   it("exposes the AI limit configuration", () => {
     expect(AI_RATE_LIMIT).toEqual({ limit: 10, windowMs: 60_000 });
   });

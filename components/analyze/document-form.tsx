@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState, type FormEvent } from "react";
+import { useDeferredValue, useId, useMemo, useState, type FormEvent } from "react";
 import { ContextFields } from "@/components/analyze/context-fields";
 import { SampleSelect } from "@/components/analyze/sample-select";
 import { useT } from "@/components/locale-provider";
@@ -56,7 +56,10 @@ export function DocumentForm({ busy, onSubmit }: DocumentFormProps) {
   // flat in another state works. Otherwise the user's own location (only after
   // they asked for it), otherwise the document's own city or PIN as a guess
   // that is never sent: the server makes the same guess and says so.
-  const detected = useMemo(() => detectState(text), [text]);
+  // Detection scans the whole text with a few dozen patterns, so it follows
+  // typing at a distance: keystrokes paint first, the guess catches up after.
+  const settledText = useDeferredValue(text);
+  const detected = useMemo(() => detectState(settledText), [settledText]);
   const state = chosenState ?? locatedState ?? detected?.state ?? "";
   const source = stateSourceFor(chosenState, locatedState, detected?.evidence ?? null);
 
