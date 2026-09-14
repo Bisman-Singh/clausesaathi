@@ -42,7 +42,7 @@ describe("attachStatutes", () => {
     expect(client.search).toHaveBeenCalledWith("penalty clause", 10);
   });
 
-  it("searches with the state first and keeps a state match, else falls back to a plain search", async () => {
+  it("fetches the phrasings together and prefers a state match over a plain one", async () => {
     const own: StatuteHit = {
       ...hit,
       act: "The Kerala Buildings (Lease and Rent Control) Act, 1965",
@@ -61,7 +61,7 @@ describe("attachStatutes", () => {
     };
     const [second] = await attachStatutes([risk(1, "penalty")], central, { state: "Kerala" });
     expect(second?.statute?.act).toBe(hit.act);
-    expect(central.search).toHaveBeenCalledTimes(1);
+    expect(central.search).toHaveBeenCalledTimes(2);
 
     const empty: IndiaCodeClient = {
       search: vi.fn(async (query: string) => (query.endsWith("Kerala") ? [] : [hit])),

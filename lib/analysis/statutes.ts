@@ -53,10 +53,12 @@ export async function attachStatutes(
 }
 
 /**
- * The state-qualified query first, so the user's own act can surface. When
- * that search already yields a usable hit, own-state or central, it is taken;
- * an empty result falls back to the plain query, and if that only finds other
- * states' acts, one last search names the domain's central act outright.
+ * Three phrasings, in order of preference: the state-qualified query so the
+ * user's own act can surface, the plain query, and the domain's central act
+ * named outright for when the first two only find other states' acts. They
+ * are fetched together rather than one after another, so a lookup costs one
+ * round trip instead of up to three; the client's hour-long cache keeps the
+ * extra searches free on repeat, and the first phrasing with a usable hit wins.
  */
 async function searchWithPreference(
   client: IndiaCodeClient,
@@ -70,11 +72,11 @@ async function searchWithPreference(
     query,
     ...(options.centralAct ? [`${query} ${options.centralAct}`] : []),
   ];
-  for (const attempt of attempts) {
-    const hit = pickForJurisdiction(
-      preferRelevant(await client.search(attempt, HITS_PER_QUERY), hints),
-      state,
-    );
+  const results = await Promise.all(
+    attempts.map((attempt) => client.search(attempt, HITS_PER_QUERY)),
+  );
+  for (const hits of results) {
+    const hit = pickForJurisdiction(preferRelevant(hits, hints), state);
     if (hit) return hit;
   }
   return null;
