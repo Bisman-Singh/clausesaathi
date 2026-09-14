@@ -26,15 +26,27 @@ quota, and the usual web application classes (XSS, clickjacking, CSRF).
 
 - Same-origin enforcement via `Sec-Fetch-Site`, with an `Origin`/`Host` match as
   fallback, so cross-site pages cannot spend the AI quota or submit documents.
-- Declared and actual body size caps before parsing; uploads are checked for
-  type and size, and PDFs for page count, before any bytes are read or sent to
-  a model.
-- Every body is validated with Zod; unknown shapes are rejected with 400.
-- Sliding-window rate limit per client address on all AI-backed routes (429).
+- Declared and actual body size caps before parsing; uploads are typed by
+  their magic bytes and checked for size, and PDFs for page count, before any
+  bytes are read or sent to a model. PDF parsing has a 15 s deadline so a
+  crafted file cannot hold a request open.
+- Every body is validated with Zod; every string carries a maximum length;
+  unknown shapes are rejected with 400.
+- Sliding-window rate limit per client address on all AI-backed routes (429),
+  with the address table itself capped so a flood of fresh addresses cannot
+  grow memory.
 - Errors map to stable codes; internal messages never reach the client.
+
+**Exact caps** (`lib/constants.ts`): document 80 to 60,000 characters; upload
+4 MiB; PDF 40 pages; situation 600 characters; question 500 characters; 12
+chat turns of at most 32 parts; 250 clauses; 6 statute lookups per analysis;
+10 AI requests per minute per address; 100 s across the provider chain.
 
 **AI boundary**
 
+- The "your situation" field is quoted into the analysis prompt, so it passes
+  the same pattern screen as Q&A questions; text that addresses the assistant
+  is dropped and the document is analysed evenly instead.
 - Q&A questions pass two guards outside the answering model: a pattern screen
   for text that tries to re-instruct the assistant, and a separate, tiny model
   call that decides whether the question is about the document at all. Either
@@ -48,6 +60,9 @@ quota, and the usual web application classes (XSS, clickjacking, CSRF).
   rendered as HTML or executed.
 - Clause citations the model invents are dropped.
 - Statute text is fetched from IndiaCode; the model cannot write law into the UI.
+  Each fetch has a 6 s timeout and a 1 MB response cap, links are accepted only
+  on IndiaCode's own host over https, and errors carry the status code alone so
+  the search phrase never reaches a log.
 - The Q&A system prompt instructs the model to treat document content as data,
   and the only tool is a read-only search. There is no tool that can write,
   fetch arbitrary URLs, or act on the user's behalf.
@@ -76,12 +91,17 @@ quota, and the usual web application classes (XSS, clickjacking, CSRF).
 - `/.well-known/security.txt` (RFC 9116) points reporters at the private
   advisory form.
 
-## Known limitations
+## Known limitations and accepted risks
 
 - The rate limiter is in-process. On a multi-instance deployment each instance
   has its own window. A shared store would be the next step.
 - Same-origin checks depend on browser-sent headers; non-browser clients that
   forge them are limited only by the rate limiter and input caps.
+- There is no sign-in by design: nothing is stored, so there is nothing to
+  protect with an account, and asking for one would exclude the people the
+  app is for.
+- pdf.js cannot be cancelled mid-parse; the deadline frees the request and the
+  stalled worker is reclaimed with the function instance.
 
 ## Reporting
 

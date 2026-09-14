@@ -77,15 +77,65 @@ compare mode), an employment offer, gym membership terms and a legal notice.
   read-only statute search (`lib/qa/`). Document text is treated as data; the
   system prompt says so.
 
+## Security
+
+The full threat model and control list is in `SECURITY.md`. The short version:
+
+- **Browser hardening.** Per-request nonce CSP with `strict-dynamic` and no
+  `unsafe-inline` for scripts, HSTS with preload, `X-Frame-Options: DENY`,
+  COOP and CORP `same-origin`, a `Permissions-Policy` that allows geolocation
+  for this origin only (`proxy.ts`, `next.config.ts`).
+- **Every API route** checks `Sec-Fetch-Site` (with an `Origin`/`Host`
+  fallback), caps the declared and actual body size before parsing, validates
+  the body with Zod where every string is bounded, and rate-limits per client
+  address (`lib/http/`). Uploads are typed by magic bytes, not by the declared
+  MIME type (`lib/document/upload.ts`); PDFs are capped by size, page count and
+  parse time (`lib/document/pdf.ts`).
+- **The model is boxed in.** Document text and the user's situation are data,
+  never instructions: the situation is screened for text that addresses the
+  assistant, Q&A questions pass a pattern screen and a separate topic-gate
+  model, the document travels inside `<document>` tags, and every answer is
+  checked for a citation (`lib/qa/guard.ts`, `lib/qa/gate.ts`). Structured
+  output is validated before render; invented clause ids are dropped.
+- **Third parties see the minimum.** IndiaCode receives short search phrases
+  over a capped, time-limited fetch, and its links are host-checked before they
+  render (`lib/statute/indiacode.ts`). Nothing is stored server-side and no
+  document content is logged.
+- **Supply chain.** Exact versions for every dependency, Actions pinned to
+  commit SHAs, `npm audit`, CodeQL and Dependabot in CI, and
+  `/.well-known/security.txt` for reporters.
+
+## Performance
+
+- **One model call per analysis**, structured output with a token cap, and a
+  100 s request deadline across the provider chain so a stalled model never
+  holds a function for its full 120 s (`lib/ai/client.ts`).
+- **Deterministic work stays off the model:** clause segmentation, citation
+  verification, deadline arithmetic and the compare diff are plain code that
+  runs in milliseconds (`lib/document/segment.ts`, `lib/compare/diff.ts`).
+- **Statutes are fetched in parallel** across the risks and across the three
+  query phrasings per risk, each with a 6 s timeout and a 1 MB cap, behind an
+  hour-long LRU cache (`lib/analysis/statutes.ts`, `lib/cache/lru.ts`).
+- **Results are cached** by a SHA-256 of the text, situation, locale and state
+  for an hour, so the samples and repeated documents cost nothing
+  (`lib/analysis/cache.ts`).
+- **The client stays small.** Photos are shrunk in the browser before upload,
+  the Q&A panel is lazy-loaded only after a result exists, state detection runs
+  behind typing with `useDeferredValue`, and the home page ships about 180 KB
+  of JavaScript: Lighthouse 96 performance, 100 accessibility, 100 best
+  practices, 100 SEO on production.
+- **Memory is bounded** everywhere something is kept: the two LRU caches, the
+  rate limiter's address table, and the input caps in `lib/constants.ts`.
+
 ## Judging criteria, and where to verify each
 
 | Criterion                       | How it is addressed                                                                                                                                                                                      | Look at                                                                   |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | **Problem statement alignment** | All seven listed use cases in one product, plus legal-aid eligibility; information-not-advice built into prompts, UI copy and the boundary of what is shown                                              | table above, `lib/analysis/prompts.ts`, `lib/legal-aid/`                  |
 | **Code quality**                | Strict TypeScript (`noUncheckedIndexedAccess`), ESLint with complexity ≤10, ≤80 lines per function, no `any`, no non-null assertions; small single-purpose modules with doc comments; Prettier-formatted | `tsconfig.json`, `eslint.config.mjs`, `ARCHITECTURE.md`                   |
-| **Security**                    | Nonce-based CSP with `strict-dynamic` and no `unsafe-inline`, HSTS and the other hardening headers, same-origin checks, body size caps, schema validation, rate limiting, no stored user data            | `SECURITY.md`, `proxy.ts`, `next.config.ts`, `lib/http/`                  |
-| **Efficiency**                  | No database; one model call per analysis with output caps; LRU-cached statute lookups; provider fallback with per-call timeouts; deterministic work (segmentation, diff, dates) done without a model     | `lib/cache/`, `lib/ai/client.ts`, `lib/compare/diff.ts`                   |
-| **Testing**                     | 279 tests, **100% statements, branches, functions and lines across the whole repository** (routes, components, library, proxy), enforced in CI; opt-in live test against real Gemini and IndiaCode       | `TESTING.md`, `tests/`, `vitest.config.mts`                               |
+| **Security**                    | Nonce CSP with `strict-dynamic`, HSTS and the other hardening headers, same-origin checks, body caps, magic-byte file typing, bounded Zod schemas, rate limiting, injection screens, pinned supply chain | "Security" above, `SECURITY.md`, `proxy.ts`, `lib/http/`, `lib/qa/`       |
+| **Efficiency**                  | One model call per analysis with output caps and a deadline; parallel, cached, capped statute lookups; hashed result cache; deterministic segmentation, diff and dates; lazy Q&A chunk; bounded memory   | "Performance" above, `lib/analysis/`, `lib/cache/`, `lib/ai/client.ts`    |
+| **Testing**                     | 284 tests, **100% statements, branches, functions and lines across the whole repository** (routes, components, library, proxy), enforced in CI; opt-in live test against real Gemini and IndiaCode       | `TESTING.md`, `tests/`, `vitest.config.mts`                               |
 | **Accessibility**               | WCAG 2.2 AA: keyboard-only flows, skip link, labelled controls with announced errors, live regions, focus management, 4.5:1 contrast in both schemes, reduced motion, `lang` switching, axe tests        | `ACCESSIBILITY.md`, `app/globals.css`, `components/`, `tests/components/` |
 
 ## Getting started

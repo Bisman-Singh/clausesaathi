@@ -90,6 +90,26 @@ count, situation and question length, chat history, clause count and statute
 lookups per analysis. The limits keep free-tier usage predictable and abuse
 cheap to reject before a model is called.
 
+## Latency budget
+
+Where the time goes on a typical analysis of the sample rent agreement, and
+what bounds it:
+
+| Step                        | Typical    | Bound                                                        |
+| --------------------------- | ---------- | ------------------------------------------------------------ |
+| Segmentation and hashing    | < 5 ms     | 250 clauses                                                  |
+| Structured brief (one call) | 10 to 25 s | 30 s per attempt, 100 s across the chain, 6,000 tokens       |
+| Statute lookups             | 1 to 6 s   | 6 risks in parallel, 3 phrasings each in parallel, 6 s fetch |
+| Transcription (scans only)  | 20 to 55 s | 55 s timeout, 16,000 tokens                                  |
+| Q&A topic gate              | about 1 s  | lite model first, 8 s timeout, fails open                    |
+| Q&A first token             | 1 to 3 s   | streamed; provider fallback on an empty or failing stream    |
+
+The brief is not streamed on purpose: citations are verified against the
+whole object before anything renders, and a partially streamed brief would
+show claims that might be dropped a moment later. A repeat of the same text,
+situation, locale and state is served from the hashed result cache in
+milliseconds.
+
 ## Known limitations
 
 - Scans and photos are transcribed by the model, not by a dedicated OCR engine.
