@@ -53,7 +53,10 @@ describe("proxy", () => {
 describe("next.config security headers", () => {
   it("applies the static headers to every path and hides the framework banner", async () => {
     const rules = await nextConfig.headers?.();
-    expect(rules).toEqual([{ source: "/:path*", headers: securityHeaders }]);
+    expect(rules).toEqual([
+      { source: "/:path*", headers: securityHeaders },
+      { source: "/api/:path*", headers: [{ key: "Cache-Control", value: "no-store" }] },
+    ]);
     expect(securityHeaders.map((h) => h.key)).toContain("Strict-Transport-Security");
     expect(nextConfig.poweredByHeader).toBe(false);
   });

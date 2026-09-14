@@ -36,6 +36,8 @@ quota, and the usual web application classes (XSS, clickjacking, CSRF).
   with the address table itself capped so a flood of fresh addresses cannot
   grow memory.
 - Errors map to stable codes; internal messages never reach the client.
+- Every `/api/*` response is sent with `Cache-Control: no-store`, so no
+  shared cache or proxy keeps a copy of a brief or an answer.
 
 **Exact caps** (`lib/constants.ts`): document 80 to 60,000 characters; upload
 4 MiB; PDF 40 pages; situation 600 characters; question 500 characters; 12

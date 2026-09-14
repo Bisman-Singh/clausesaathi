@@ -13,7 +13,7 @@ import { qaSystemPrompt } from "@/lib/qa/prompt";
 import { refusalStream, withGroundingCheck } from "@/lib/qa/refusal";
 import { streamWithFallback } from "@/lib/qa/stream";
 import { statuteTools } from "@/lib/qa/tools";
-import { aiRateLimiter, serverDeps } from "@/lib/server/deps";
+import { aiRateLimiter, gateCache, serverDeps } from "@/lib/server/deps";
 import { isIndianState } from "@/lib/statute/jurisdiction";
 
 export const maxDuration = 120;
@@ -64,7 +64,7 @@ export async function POST(request: Request): Promise<Response> {
     if (typeof question !== "string" || isInjectionAttempt(question)) {
       return createUIMessageStreamResponse({ stream: refusalStream(locale) });
     }
-    if (!(await isOnTopic(document, question, locale, deps))) {
+    if (!(await isOnTopic(document, question, locale, { ...deps, cache: gateCache }))) {
       return createUIMessageStreamResponse({ stream: refusalStream(locale) });
     }
     const system = qaSystemPrompt(document, locale);

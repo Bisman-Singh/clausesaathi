@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LanguageModel } from "ai";
 import { segmentDocument } from "@/lib/document/segment";
-import { gateChain, gatePrompt, isOnTopic } from "@/lib/qa/gate";
+import { LruCache } from "@/lib/cache/lru";
+import { gateChain, gateKey, gatePrompt, isOnTopic } from "@/lib/qa/gate";
 
 const document = segmentDocument(
   "RENT AGREEMENT\n\n1. Deposit\nThe tenant pays a deposit.\n\n2. Notice\nThirty days notice.\n\nA block with no heading at all that is long enough to be trimmed in the outline.",
@@ -47,5 +48,26 @@ describe("isOnTopic", () => {
   it("fails open when every model is down, so an outage does not block questions", async () => {
     const generate = vi.fn(async () => Promise.reject(new Error("down")));
     expect(await isOnTopic(document, "Deposit?", "en", deps(generate))).toBe(true);
+  });
+
+  it("remembers a verdict per document and question, but never a fail-open one", async () => {
+    const cache = new LruCache<boolean>(10, 60_000);
+    const generate = vi.fn(async () => ({ output: { onTopic: false, reason: "weather" } }));
+    const withCache = { ...deps(generate), cache };
+    expect(await isOnTopic(document, "Will it rain?", "en", withCache)).toBe(false);
+    expect(await isOnTopic(document, "  will it RAIN?", "en", withCache)).toBe(false);
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(await isOnTopic(document, "Deposit?", "en", withCache)).toBe(false);
+    expect(generate).toHaveBeenCalledTimes(2);
+    expect(gateKey(document, "a")).not.toBe(
+      gateKey(segmentDocument("Other text " + "x".repeat(80)), "a"),
+    );
+
+    const down = vi.fn(async () => Promise.reject(new Error("down")));
+    const outage = { ...deps(down), cache: new LruCache<boolean>(10, 60_000) };
+    expect(await isOnTopic(document, "Notice?", "en", outage)).toBe(true);
+    const attemptsPerQuestion = down.mock.calls.length;
+    expect(await isOnTopic(document, "Notice?", "en", outage)).toBe(true);
+    expect(down).toHaveBeenCalledTimes(2 * attemptsPerQuestion);
   });
 });

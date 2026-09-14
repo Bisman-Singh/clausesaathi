@@ -14,10 +14,16 @@ export const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
 ];
 
+/** API responses describe someone's document; no shared cache or proxy may keep a copy. */
+export const apiHeaders = [{ key: "Cache-Control", value: "no-store" }];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      { source: "/api/:path*", headers: apiHeaders },
+    ];
   },
 };
 

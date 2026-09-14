@@ -1,7 +1,9 @@
+import { createHash } from "node:crypto";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { withModelFallback, type ModelFactory } from "@/lib/ai/client";
 import { modelChain, type ModelEnv } from "@/lib/ai/models";
+import type { LruCache } from "@/lib/cache/lru";
 import type { Locale } from "@/lib/constants";
 import type { ParsedDocument } from "@/lib/document/types";
 
@@ -28,6 +30,15 @@ export interface GateDeps {
   factory: ModelFactory;
   env: ModelEnv;
   generate?: typeof generateText;
+  /** Verdicts by document and question, so a repeated question skips the model call. */
+  cache?: LruCache<boolean>;
+}
+
+/** A hash rather than the text, so the cache holds nothing anyone could read back. */
+export function gateKey(document: ParsedDocument, question: string): string {
+  const hash = createHash("sha256");
+  for (const clause of document.clauses) hash.update(clause.text).update("\n");
+  return hash.update("?").update(question.trim().toLowerCase()).digest("hex");
 }
 
 /** The lite models answer a yes/no question in well under a second; try them first. */
@@ -64,6 +75,9 @@ export async function isOnTopic(
   deps: GateDeps,
 ): Promise<boolean> {
   const generate = deps.generate ?? generateText;
+  const key = gateKey(document, question);
+  const remembered = deps.cache?.get(key);
+  if (remembered !== undefined) return remembered;
   try {
     const { value } = await withModelFallback(
       deps.factory,
@@ -81,9 +95,11 @@ export async function isOnTopic(
       },
       { chain: gateChain(deps.env), timeoutMs: GATE_TIMEOUT_MS },
     );
+    deps.cache?.set(key, value.onTopic);
     return value.onTopic;
   } catch {
     // The answering model still has its own instructions; an outage here must not block every question.
+    // The fail-open verdict is not remembered, so the gate is back the moment a model is.
     return true;
   }
 }

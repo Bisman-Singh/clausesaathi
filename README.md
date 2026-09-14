@@ -118,7 +118,8 @@ The full threat model and control list is in `SECURITY.md`. The short version:
   hour-long LRU cache (`lib/analysis/statutes.ts`, `lib/cache/lru.ts`).
 - **Results are cached** by a SHA-256 of the text, situation, locale and state
   for an hour, so the samples and repeated documents cost nothing
-  (`lib/analysis/cache.ts`).
+  (`lib/analysis/cache.ts`); topic-gate verdicts are cached the same way, so a
+  repeated question skips its model call (`lib/qa/gate.ts`).
 - **The client stays small.** Photos are shrunk in the browser before upload,
   the Q&A panel is lazy-loaded only after a result exists, state detection runs
   behind typing with `useDeferredValue`, and the home page ships about 180 KB
@@ -135,7 +136,7 @@ The full threat model and control list is in `SECURITY.md`. The short version:
 | **Code quality**                | Strict TypeScript (`noUncheckedIndexedAccess`), ESLint with complexity ≤10, ≤80 lines per function, no `any`, no non-null assertions; small single-purpose modules with doc comments; Prettier-formatted | `tsconfig.json`, `eslint.config.mjs`, `ARCHITECTURE.md`                   |
 | **Security**                    | Nonce CSP with `strict-dynamic`, HSTS and the other hardening headers, same-origin checks, body caps, magic-byte file typing, bounded Zod schemas, rate limiting, injection screens, pinned supply chain | "Security" above, `SECURITY.md`, `proxy.ts`, `lib/http/`, `lib/qa/`       |
 | **Efficiency**                  | One model call per analysis with output caps and a deadline; parallel, cached, capped statute lookups; hashed result cache; deterministic segmentation, diff and dates; lazy Q&A chunk; bounded memory   | "Performance" above, `lib/analysis/`, `lib/cache/`, `lib/ai/client.ts`    |
-| **Testing**                     | 284 tests, **100% statements, branches, functions and lines across the whole repository** (routes, components, library, proxy), enforced in CI; opt-in live test against real Gemini and IndiaCode       | `TESTING.md`, `tests/`, `vitest.config.mts`                               |
+| **Testing**                     | 285 tests, **100% statements, branches, functions and lines across the whole repository** (routes, components, library, proxy), enforced in CI; opt-in live test against real Gemini and IndiaCode       | `TESTING.md`, `tests/`, `vitest.config.mts`                               |
 | **Accessibility**               | WCAG 2.2 AA: keyboard-only flows, skip link, labelled controls with announced errors, live regions, focus management, 4.5:1 contrast in both schemes, reduced motion, `lang` switching, axe tests        | `ACCESSIBILITY.md`, `app/globals.css`, `components/`, `tests/components/` |
 
 ## Getting started
